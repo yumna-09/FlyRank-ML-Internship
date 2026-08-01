@@ -1,0 +1,46 @@
+{
+  "week": "w04_baseline_score",
+  "signal_checks": {
+    "staleness_vs_decline": {
+      "flag_linked_to": "refresh flags",
+      "verdict": "MIXED",
+      "note": "decline rate rises 0-30d (0.511, n=20480) -> 91-180d (0.611, n=9171) but reverses at 181+d (0.471, n=174), below dataset average (0.542). Staleness excluded from the score for this reason."
+    },
+    "ctr_vs_position": {
+      "flag_linked_to": "CTR-fix logic",
+      "verdict": "CONFIRMED",
+      "note": "median CTR declines monotonically with position tier: top_3 0.20 -> page_1 0.24 -> striking 0.17 -> page_3_5 0.09 -> deep 0.00 (n=389 to n=7064, visible pages only, impressions_90d >= 500)."
+    }
+  },
+  "rule": {
+    "reason_code": "ctr_below_position_expected",
+    "score_formula": "eligible * visibility_score * ctr_gap_norm",
+    "eligibility": "impressions_90d >= 500 AND avg_position > 0 AND position_tier != 'no_data'",
+    "action_thresholds": {
+      "prioritize_ctr_review": ">=0.6",
+      "review_ctr": ">0 and <0.6",
+      "monitor": "==0"
+    }
+  },
+  "queue_stats": {
+    "rows": 30000,
+    "action_counts": {
+      "monitor": 13274,
+      "review_ctr": 12814,
+      "prioritize_ctr_review": 3912
+    },
+    "score_median": 0.2075,
+    "score_max": 0.9909,
+    "top10_declining_rate": 0.7
+  },
+  "no_leakage": {
+    "score_inputs": [
+      "impressions_90d",
+      "avg_position",
+      "position_tier",
+      "ctr"
+    ],
+    "label_source_used": false,
+    "product_flags_present_in_dataset": false
+  }
+}
