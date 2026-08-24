@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which pages should a reviewer check first? — Content Archetype Clustering on FlyRank Search Data</title>
+<meta name="description" content="A research paper on grouping content pages by observed search behavior to prioritize a review queue — built and honestly validated on real FlyRank production search data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6;
+    --surface:#FFFFFF;
+    --ink:#16232E;
+    --ink-soft:#4A5A66;
+    --ink-faint:#7C8B96;
+    --teal:#0E7C86;
+    --teal-dark:#0A5A62;
+    --amber:#D9A441;
+    --red:#C2453D;
+    --line:#D8DEE3;
+    --line-soft:#E7EBEE;
+    --serif:'Source Serif 4', Georgia, serif;
+    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{animation:none !important; transition:none !important;} }
+
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); line-height:1.65; font-size:16.5px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--teal-dark);}
+  a:focus-visible, button:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  .wrap{max-width:840px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- top meta bar ---------- */
+  .topbar{
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .topbar .wrap{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 24px; font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+    max-width:840px;
+  }
+  .topbar a{color:var(--ink-soft); text-decoration:none;}
+  .topbar a:hover{color:var(--teal-dark); text-decoration:underline;}
+
+  /* ---------- hero: SERP-snippet motif ---------- */
+  .hero{padding:64px 0 40px;}
+  .serp-mock{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:20px 24px; margin-bottom:36px;
+  }
+  .serp-mock .breadcrumb{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+    letter-spacing:0.02em;
+  }
+  .serp-mock .serp-title{
+    font-family:var(--sans); font-weight:600; font-size:19px; color:var(--teal-dark);
+    margin:4px 0 6px; line-height:1.35;
+  }
+  .serp-mock .serp-snippet{
+    font-size:14.5px; color:var(--ink-soft); margin:0;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--teal-dark); margin:0 0 14px;
+  }
+  h1.title{
+    font-family:var(--serif); font-weight:700; font-size:clamp(28px, 4.2vw, 44px);
+    line-height:1.18; margin:0 0 22px; color:var(--ink);
+  }
+  .byline{
+    font-family:var(--mono); font-size:13px; color:var(--ink-faint); margin-bottom:8px;
+  }
+  .byline a{color:var(--ink-faint);}
+
+  /* ---------- abstract box ---------- */
+  .abstract{
+    background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--teal);
+    border-radius:4px; padding:22px 26px; margin:28px 0 8px;
+  }
+  .abstract h2{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--teal-dark); margin:0 0 10px;
+  }
+  .abstract p{margin:0; font-size:16px; color:var(--ink-soft);}
+
+  /* ---------- sections ---------- */
+  section.block{padding:52px 0; border-top:1px solid var(--line-soft);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; margin-bottom:20px;}
+  .sec-num{
+    font-family:var(--mono); font-size:13px; color:var(--surface); background:var(--ink);
+    border-radius:4px; padding:3px 8px; flex-shrink:0;
+  }
+  section.block h2.sec-title{
+    font-family:var(--serif); font-weight:600; font-size:26px; margin:0; color:var(--ink);
+  }
+  h3{font-family:var(--sans); font-weight:700; font-size:17px; margin:26px 0 10px; color:var(--ink);}
+  p{margin:0 0 14px; color:var(--ink-soft);}
+  ul, ol{margin:0 0 16px; padding-left:22px; color:var(--ink-soft);}
+  li{margin-bottom:8px;}
+  strong{color:var(--ink); font-weight:600;}
+  code{font-family:var(--mono); font-size:0.88em; background:var(--line-soft); padding:1px 5px; border-radius:3px; color:var(--teal-dark);}
+
+  /* ---------- callout numbers ---------- */
+  .stat-row{display:flex; gap:14px; flex-wrap:wrap; margin:22px 0 26px;}
+  .stat-card{
+    flex:1 1 150px; background:var(--surface); border:1px solid var(--line); border-radius:8px;
+    padding:16px 18px;
+  }
+  .stat-card .num{font-family:var(--mono); font-size:24px; font-weight:600; color:var(--teal-dark);}
+  .stat-card .lbl{font-size:12.5px; color:var(--ink-faint); margin-top:4px; line-height:1.4;}
+
+  /* ---------- figures ---------- */
+  figure{margin:26px 0;}
+  figure img{width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:8px; background:var(--surface);}
+  figcaption{
+    font-size:13.5px; color:var(--ink-faint); margin-top:8px; padding-left:2px;
+    border-left:2px solid var(--line); padding-left:10px;
+  }
+
+  /* ---------- table ---------- */
+  table{width:100%; border-collapse:collapse; margin:20px 0; font-size:14.5px;}
+  th, td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line);}
+  th{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); font-weight:600;}
+  td strong{color:var(--ink);}
+  tr:last-child td{border-bottom:none;}
+
+  /* ---------- limitations box ---------- */
+  .limits-box{
+    background:#FBF6EC; border:1px solid #E9D8AE; border-radius:8px; padding:20px 24px;
+  }
+  .limits-box li::marker{color:var(--amber);}
+
+  /* ---------- signoff ---------- */
+  .badge-row{display:flex; gap:10px; flex-wrap:wrap; margin:18px 0;}
+  .badge{
+    font-family:var(--mono); font-size:12px; padding:5px 10px; border-radius:20px;
+    border:1px solid var(--line);
+  }
+  .b-refresh{background:#E9F3F2; color:var(--teal-dark); border-color:#BFDEDB;}
+  .b-boost{background:#FBF1DE; color:#8A6420; border-color:#EAD9A8;}
+  .b-prune{background:#FBEBE9; color:var(--red); border-color:#EFC7C2;}
+  .b-monitor{background:var(--line-soft); color:var(--ink-faint);}
+
+  /* ---------- repro ---------- */
+  .repro-list{list-style:none; padding:0;}
+  .repro-list li{
+    font-family:var(--mono); font-size:14px; padding:8px 0; border-bottom:1px solid var(--line-soft);
+  }
+  .repro-list li:last-child{border-bottom:none;}
+  .repro-list a{text-decoration:none;}
+  .repro-list a:hover{text-decoration:underline;}
+
+  /* ---------- credit / footer ---------- */
+  footer{
+    background:var(--ink); color:#C9D2D8; padding:48px 0 40px; margin-top:20px;
+  }
+  footer .wrap{max-width:840px;}
+  footer h2{
+    font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:#8FB5B8; margin:0 0 14px;
+  }
+  footer p{color:#C9D2D8;}
+  footer a{color:#7FD1D9;}
+  .credit-box{
+    border:1px solid #2C3B47; border-radius:8px; padding:18px 22px; margin-top:14px;
+    background:#1C2A34;
+  }
+  .credit-box strong{color:#FFFFFF;}
+  .footer-meta{font-family:var(--mono); font-size:12px; color:#6C7E88; margin-top:30px;}
+
+  @media (max-width:600px){
+    body{font-size:15.5px;}
+    .hero{padding:44px 0 28px;}
+    section.block{padding:38px 0;}
+    .stat-card{flex:1 1 100%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>FlyRank ML Internship — Capstone</span>
+    <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" rel="noopener">github.com/yumna-09/FlyRank-ML-Internship ↗</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="serp-mock">
+      <div class="breadcrumb">flyrank-ml-internship.github.io › capstone</div>
+      <div class="serp-title">Which content pages should a reviewer check first?</div>
+      <p class="serp-snippet">A behavior-based priority queue for content review, built and honestly validated on real FlyRank production search data — with an explicit list of what it can't claim.</p>
+    </div>
+
+    <p class="eyebrow">Research Paper — Applied Search Intelligence</p>
+    <h1 class="title">Content Archetype Clustering: Grouping Pages by Observed Behavior to Prioritize a Review Queue</h1>
+    <p class="byline">Yumna · FlyRank ML Internship, Applied Search Intelligence track · <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" rel="noopener">repo ↗</a></p>
+
+    <div class="abstract">
+      <h2>Abstract</h2>
+      <p>
+        When a site has far more pages than a review team can check by hand, which page should a human look at first?
+        This paper groups 30,000 real content pages by five observed signals — impressions, click-through rate, ranking position, engagement, and age — using KMeans clustering, and compares the result to a transparent hand-written rule.
+        Clustering was validated honestly by holding out entire clients (not just rows), which dropped the separation score from an inflated 0.376 to a real 0.305 — still far ahead of the rule-based baseline's 0.0013.
+        The resulting archetypes turn into a ranked action playbook — refresh, boost, prune, or monitor — with reason codes, a mandatory human-review flag on 23% of pages, and an explicit no-go list for what should never be automated.
+        This is decision-support for a content team, not a causal or production system: every claim below is stated at the strength its evidence actually carries.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="block" id="intro">
+    <div class="sec-head"><span class="sec-num">01</span><h2 class="sec-title">Introduction &amp; Problem</h2></div>
+    <p>
+      FlyRank publishes content into client websites at a scale no team can review page-by-page: the production catalog behind this project holds <strong>519,606 content items across 104 clients</strong>. Pages that rank well quietly decay over time — rankings slip, clicks drop — and by the time a team notices, the page has often been losing traffic for weeks.
+    </p>
+    <p>
+      FlyRank's product already flags pages today with hand-written rules (a health score, quick-win tags). Those rules work and run in production, but they test one condition at a time. A page can have high impressions and a broken click-through rate, or low impressions and strong engagement — real pages fail on combinations of signals, not one threshold. This paper asks whether <strong>grouping pages by several observed signals at once</strong>, instead of one rule at a time, gives a reviewer a sharper starting point.
+    </p>
+    <p>
+      The decision this supports: which pages a content strategist opens first this week. The cost of getting it wrong: a page wrongly read as healthy keeps losing traffic unnoticed; a page wrongly flagged burns editorial hours it didn't need. Every output here is built to be checked by a person before anything happens to a page — never to act on its own.
+    </p>
+  </section>
+
+  <section class="block" id="data">
+    <div class="sec-head"><span class="sec-num">02</span><h2 class="sec-title">Data</h2></div>
+    <p>
+      This project draws on the <strong>FlyRank ML Internship warehouse release</strong> (Hugging Face, gated dataset, instant approval), build id <code>flyrank_pseudonymized_warehouse_release_v20260703</code>, exported 2026-07-03 from FlyRank's real production search-and-analytics warehouse — Google Search Console and Google Analytics data, synced daily and pseudonymized before release. No client names, domains, URLs, page titles, or raw search queries appear anywhere in it.
+    </p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num">78.8M</div><div class="lbl">rows in the full daily performance fact table (daily × client × content)</div></div>
+      <div class="stat-card"><div class="num">519,606</div><div class="lbl">distinct content items in the release</div></div>
+      <div class="stat-card"><div class="num">30,000</div><div class="lbl">rows used for this paper's main pipeline (anonymized starter sample)</div></div>
+    </div>
+    <p>
+      Two different pulls from that release were used:
+    </p>
+    <ul>
+      <li><strong>Data-contract exercise:</strong> a March 2026 slice queried directly from the warehouse with DuckDB — 9,841,378 rows, 331,437 content items, 55 clients — used to verify grain and run a real feature-leakage trap, not the main modeling pipeline.</li>
+      <li><strong>Main clustering and playbook pipeline (this paper's results):</strong> the bundled anonymized starter sample, 30,000 rows, one row per content item, pre-aggregated over a trailing 90-day window.</li>
+    </ul>
+    <p><strong>Excluded, and why:</strong></p>
+    <ul>
+      <li>GA4 columns where availability wasn't confirmed (95.8% of the March slice) — an unmeasured zero is not a real zero.</li>
+      <li>FlyRank's own product decision flags (health score, priority score, action type) — not shipped in this release, and would be circular as model inputs.</li>
+      <li><code>trend_direction</code> / <code>trend_pct</code> — the source of the decline label — excluded from every clustering feature, used only afterward, descriptively.</li>
+      <li><code>content_id</code> / <code>client_id</code> — pseudonymous hashes, used only for grouping and the client-level train/test split, never as feature values.</li>
+    </ul>
+  </section>
+
+  <section class="block" id="method">
+    <div class="sec-head"><span class="sec-num">03</span><h2 class="sec-title">Methodology</h2></div>
+    <p>
+      <strong>Features (5, all trailing-90-day observed metrics):</strong> impressions, click-through rate, average ranking position, engagement rate, and content age — standardized before clustering so no single scale dominates.
+    </p>
+    <p><strong>Baseline, built first:</strong> a transparent rule with no fitted weights. Two candidate signals were tested against the data before either went into it:</p>
+    <ul>
+      <li><em>Staleness → decline?</em> <strong>Mixed.</strong> Decline rate rises from 51.1% to 61.1% across most freshness buckets, then drops to 47.1% in the oldest bucket (n=174) — the opposite of the assumption. Dropped.</li>
+      <li><em>Position → CTR?</em> <strong>Confirmed.</strong> Median CTR falls in lock-step with ranking position across every well-sampled bucket (top_3 0.20% → deep 0.00%). Kept as the rule's core signal.</li>
+    </ul>
+    <p>
+      The baseline score multiplies a visibility percentile by a CTR-gap percentile, restricted to eligible pages, sorted into three fixed-threshold buckets.
+    </p>
+    <p>
+      <strong>Model:</strong> KMeans, k chosen by silhouette search over k=2..7 (k=7 won). Chosen over a supervised model because this lane has no label to predict, and its output — cluster membership — is easy to explain to a non-technical reviewer.
+    </p>
+    <p>
+      <strong>Validation:</strong> the first fit was leaky — centroids fit and scored on the same 30,000 rows. The honest fix: split all 55 client IDs (not rows) 80/20, fit centroids on the 80% train-client rows only, then score strictly on the 20% held-out clients the model never touched — testing whether archetypes generalize to a brand-new client.
+    </p>
+    <p>
+      <strong>Leakage checks run:</strong> (1) k-selection leakage — re-ran the k search on train-clients-only data; k=7 won there too, so the winning k doesn't depend on seeing the held-out clients. (2) Feature leakage — confirmed IDs and the label source never enter the feature list. (3) A separate label-leakage trap (data-contract exercise) showed a feature built from the same window as a toy label pushed accuracy from a believable 0.591 to a suspicious 1.000 — that pattern is excluded from every model in this paper.
+    </p>
+  </section>
+
+  <section class="block" id="results">
+    <div class="sec-head"><span class="sec-num">04</span><h2 class="sec-title">Results (vs. Baseline)</h2></div>
+    <p>Same feature space, same 30,000 rows — rule-based buckets vs. KMeans:</p>
+    <table>
+      <tr><th>Method</th><th>Silhouette score</th><th>Reading</th></tr>
+      <tr><td>Baseline: rule-based buckets</td><td><strong>0.0013</strong></td><td>essentially no natural separation</td></tr>
+      <tr><td>KMeans (k=7), all-data fit + score</td><td>0.3763</td><td>strong — but inflated (leaky)</td></tr>
+      <tr><td>KMeans (k=7), honest client-held-out</td><td><strong>0.3046</strong></td><td>the trustworthy number</td></tr>
+    </table>
+    <figure>
+      <img src="img/baseline_vs_model.png" alt="Bar chart comparing baseline rule-bucket silhouette score (0.0013) against honest held-out KMeans silhouette score (0.3046)">
+      <figcaption>The rule-based buckets, built to flag one CTR problem, barely separate the data at all. KMeans — even scored honestly on unseen clients — finds real structure.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/validation_drop.png" alt="Bar chart showing silhouette score dropping from 0.376 (leaky, all-data) to 0.305 (honest, held-out clients)">
+      <figcaption>The honest re-check costs some score — expected when centroids are judged on clients they never saw — but the drop is modest, and 0.305 still clears the baseline by a wide margin.</figcaption>
+    </figure>
+    <h3>Cluster archetypes</h3>
+    <p>
+      Profiled on all 30,000 rows: one small cluster of very high-traffic top performers (avg. 112k impressions/90d); two large clusters of steady, older content differing mainly by age; one low-CTR, poorly-ranked cluster (avg. position 46); and a few small, unusual clusters — one near-zero-impression/high-CTR group (likely low-volume, highly targeted queries), one unusually high-engagement group. About 2.6% of all points are poorly matched to their assigned cluster, concentrated in one borderline-engagement group sitting between two clearer archetypes.
+    </p>
+    <figure>
+      <img src="img/decline_by_cluster.png" alt="Horizontal bar chart of decline rate by cluster on held-out clients, ranging from 14.6% to 61.9%">
+      <figcaption>Descriptive only — decline rate wasn't used to build the clusters. Measured on 7 held-out clients (7,611 pages); see Limitations on sample size.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block" id="limits">
+    <div class="sec-head"><span class="sec-num">05</span><h2 class="sec-title">Limitations &amp; Honest Framing</h2></div>
+    <div class="limits-box">
+      <ul>
+        <li><strong>Cross-sectional, not causal.</strong> No page was actually refreshed and re-measured — nothing here says acting on a recommendation <em>will</em> improve traffic, only that certain pages look worth reviewing first.</li>
+        <li><strong>Not "predicting Google."</strong> Clusters group behavior on 5 measured signals, not the ranking algorithm itself, and this is not semantic clustering — no page text was used.</li>
+        <li><strong>Small held-out sample for the decline-rate finding.</strong> The 14.6%–61.9% range is measured on 7 held-out clients — real, but too small to say it generalizes to the full 104-client base.</li>
+        <li><strong>Starter sample, not the full catalog.</strong> The main pipeline ran on 30,000 of 519,606 content items; cluster shapes haven't been re-validated at full scale.</li>
+        <li><strong>Baseline wasn't re-tested under the same honest split</strong> — only KMeans was re-scored on held-out clients; the rule buckets were evaluated once, on all data.</li>
+        <li><strong>Single snapshot, not a real time series.</strong> "Decay" here means declining in one 30-vs-prior-30-day window, observed once.</li>
+        <li><strong>Playbook thresholds are simple, un-tuned cutoffs</strong> — a starting shape for the queue, not yet validated against real editor decisions or downstream outcomes.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block" id="playbook">
+    <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">Ranked Recommendations</h2></div>
+    <p>
+      Every page in the sample gets one of four actions, driven only by real, observed signals — position tier, CTR gap, decline label, impressions, and cluster fit. No invented columns.
+    </p>
+    <figure>
+      <img src="img/action_distribution.png" alt="Bar chart of action counts: MONITOR 23,800, BOOST 4,348, REFRESH 1,447, PRUNE 405">
+      <figcaption>Priority queue distribution across all 30,000 pages, from the executed playbook notebook.</figcaption>
+    </figure>
+    <table>
+      <tr><th>Priority</th><th>Action</th><th>Trigger</th><th>n</th></tr>
+      <tr><td>1</td><td><span class="badge b-refresh">REFRESH</span></td><td>ranks top_3/page_1, declining &gt;20% MoM, CTR well below tier</td><td>1,447</td></tr>
+      <tr><td>2</td><td><span class="badge b-boost">BOOST</span></td><td>position 11–20 ("striking distance"), CTR below expectation</td><td>4,348</td></tr>
+      <tr><td>3</td><td><span class="badge b-prune">PRUNE</span></td><td>deep/unranked, declining, bottom-quartile visibility</td><td>405</td></tr>
+      <tr><td>4</td><td><span class="badge b-monitor">MONITOR</span></td><td>no strong signal either way</td><td>23,800</td></tr>
+    </table>
+    <p>
+      <strong>23.4%</strong> of the queue is flagged for mandatory human sign-off — every PRUNE candidate, every top-10%-visibility page, every score in the uncertain band, and every weak cluster fit.
+    </p>
+    <p><strong>Never automated:</strong> URL deletion or redirection without human verification; core brand/legal pages (hard-excluded); site navigation or URL-structure changes based solely on this output.</p>
+    <p>
+      Full logic: <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb" target="_blank" rel="noopener">work/notebooks/w07_action_playbook.ipynb ↗</a>
+    </p>
+  </section>
+
+  <section class="block" id="repro">
+    <div class="sec-head"><span class="sec-num">07</span><h2 class="sec-title">Reproducibility</h2></div>
+    <p>Everything above can be re-run from a fresh clone of the repo. Random seed <code>42</code> throughout.</p>
+    <ul class="repro-list">
+      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" rel="noopener">Repository root</a></li>
+      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb" target="_blank" rel="noopener">work/notebooks/capstone.ipynb</a> — this paper's full pipeline, mirrored section-by-section</li>
+      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w05_model.ipynb" target="_blank" rel="noopener">work/notebooks/w05_model.ipynb</a> — KMeans model + cluster interpretation</li>
+      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w06_validation_audit.ipynb" target="_blank" rel="noopener">work/notebooks/w06_validation_audit.ipynb</a> — honest client-grouped validation</li>
+      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb" target="_blank" rel="noopener">work/notebooks/w07_action_playbook.ipynb</a> — ranked action playbook</li>
+      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/requirements.txt" target="_blank" rel="noopener">requirements.txt</a> — environment</li>
+    </ul>
+    <p>To rerun: clone the repo, <code>pip install -r requirements.txt</code>, open any notebook in <code>work/notebooks/</code>, Runtime → Run all.</p>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <h2>Acknowledgments &amp; Data Credit</h2>
+    <div class="credit-box">
+      <p style="margin:0; color:#E4EAED;">Built on the <strong>FlyRank ML Internship dataset</strong> — real, pseudonymized production search and analytics data provided for this internship track.</p>
+      <p style="margin:8px 0 0;"><a href="https://flyrank.ai" target="_blank" rel="noopener">flyrank.ai ↗</a></p>
+    </div>
+    <p class="footer-meta">Research paper · FlyRank ML Internship, Applied Search Intelligence track · Decision-support findings only — observed, measured, directional language throughout.</p>
+  </div>
+</footer>
+
+</body>
+</html>
