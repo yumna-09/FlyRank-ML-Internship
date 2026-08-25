@@ -1,3 +1,21 @@
+# Content Archetype Clustering — FlyRank ML Capstone
+
+**Author:** Yumna Kashif
+
+Capstone project for the FlyRank ML Internship. 30,000 content pages grouped into 
+7 behavioral archetypes using KMeans clustering (client-held-out silhouette: 0.3046, 
+vs. 0.0013 rule-based baseline), translated into a human-review action queue.
+
+🔗 **[Live report ↗](https://yumna-09.github.io/FlyRank-ML-Internship/)**  
+📄 **[Full capstone report ↗](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md)**  
+📓 **[Capstone notebook ↗](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
+
+---
+
+*Below is the starter repo template this project was built on (setup + assignment instructions).*
+
+---
+
 # FlyRank ML Internship — Starter Repo
 
 **Applied Search Intelligence: Google Search Ranking & Discoverability**
