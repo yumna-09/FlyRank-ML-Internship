@@ -56,8 +56,8 @@ The main clustering and playbook pipeline uses the bundled anonymized starter sa
 A separate data-contract exercise used a March 2026 warehouse slice containing:
 
 * **9,841,378 rows**
-* **331,437 content items**
-* **55 clients**
+* **331,437** content items
+* **55** clients
 
 That exercise was used to verify data grain and test a feature-leakage trap. It was not the main modeling pipeline.
 
@@ -126,282 +126,236 @@ This check was limited to visible pages with:
 
 ```text
 impressions_90d >= 500
-```
 
 The observed relationship supported using a position-adjusted CTR gap as the core signal in the baseline.
 
-### Baseline rule
+Baseline rule
 
-**Reason code:**
+Reason code:
 
-```text
 ctr_below_position_expected
-```
 
-**Score formula:**
+Score formula:
 
-```text
 eligible * visibility_score * ctr_gap_norm
-```
 
-**Eligibility:**
+Eligibility:
 
-```text
 impressions_90d >= 500
 AND avg_position > 0
 AND position_tier != 'no_data'
-```
-
-### Baseline action thresholds
-
-| Action                  | Score condition |
-| ----------------------- | --------------: |
-| `prioritize_ctr_review` |          >= 0.6 |
-| `review_ctr`            |   > 0 and < 0.6 |
-| `monitor`               |            == 0 |
-
-### Baseline queue statistics
-
-| Action                  |  Pages |
-| ----------------------- | -----: |
-| `monitor`               | 13,274 |
-| `review_ctr`            | 12,814 |
-| `prioritize_ctr_review` |  3,912 |
+Baseline action thresholds
+Action	Score condition
+prioritize_ctr_review	>= 0.6
+review_ctr	> 0 and < 0.6
+monitor	== 0
+Baseline queue statistics
+Action	Pages
+monitor	13,274
+review_ctr	12,814
+prioritize_ctr_review	3,912
 
 Additional baseline statistics:
 
-* **Rows:** 30,000
-* **Median score:** 0.2075
-* **Maximum score:** 0.9909
-* **Top-10 declining rate:** 0.70
+Rows: 30,000
+Median score: 0.2075
+Maximum score: 0.9909
+Top-10 declining rate: 0.70
 
 The baseline score uses only:
 
-```text
 impressions_90d
 avg_position
 position_tier
 ctr
-```
 
 The decline-label source is not used as a score input, and FlyRank product flags are not present as model features.
 
----
+4. Model / analysis
 
-## 4. Model / analysis
-
-**Method:** KMeans clustering.
+Method: KMeans clustering.
 
 This project uses an unsupervised approach because the primary goal is not to predict a target variable. The goal is to identify groups of pages that exhibit similar observed search behavior.
 
-### Feature set
+Feature set
 
 Five standardized observed features:
 
-* impressions
-* click-through rate
-* average ranking position
-* engagement rate
-* content age
-
-### Choosing the number of clusters
+impressions
+click-through rate
+average ranking position
+engagement rate
+content age
+Choosing the number of clusters
 
 KMeans was evaluated across:
 
-```text
 k = 2 through k = 7
-```
 
 The silhouette search selected:
 
-```text
 k = 7
-```
 
 The same cluster count also won when the search was repeated using only training-client data.
 
-### Why KMeans
+Why KMeans
 
 KMeans was chosen because its output — cluster membership — can be translated into understandable behavioral archetypes for a non-technical reviewer.
 
 The clusters are not semantic categories and do not use page text. They represent similarity across the five observed performance and age signals.
 
----
-
-## 5. Evaluation & validation
-
-### Baseline vs. KMeans
+5. Evaluation & validation
+Baseline vs. KMeans
 
 The rule-based baseline and KMeans were compared in the same feature space using silhouette score as a measure of how naturally separated the resulting groups are.
 
-| Method                                 | Silhouette score | Reading                                    |
-| -------------------------------------- | ---------------: | ------------------------------------------ |
-| Baseline: rule-based buckets           |       **0.0013** | Essentially no natural separation          |
-| KMeans (`k=7`), all-data fit + score   |           0.3763 | Strong, but inflated by evaluation leakage |
-| KMeans (`k=7`), honest client-held-out |       **0.3046** | Trustworthy evaluation                     |
-
-### Client-held-out validation
+Method	Silhouette score	Reading
+Baseline: rule-based buckets	0.0013	Essentially no natural separation
+KMeans (k=7), all-data fit + score	0.3763	Strong, but inflated by evaluation leakage
+KMeans (k=7), honest client-held-out	0.3046	Trustworthy evaluation
+Client-held-out validation
 
 The first clustering evaluation fit the centroids and scored the same 30,000 rows. That does not test whether the discovered structure generalizes to unseen clients.
 
-The validation was redesigned by grouping on `client_id`:
+The validation was redesigned by grouping on client_id:
 
-* approximately 80% of clients used for fitting
-* approximately 20% of clients held out
-* centroids fit only on training-client rows
-* held-out clients scored without being used to fit the centroids
+approximately 80% of clients used for fitting
+approximately 20% of clients held out
+centroids fit only on training-client rows
+held-out clients scored without being used to fit the centroids
 
 The held-out evaluation used:
 
-* **7 held-out clients**
-* **7,611 pages**
+7 held-out clients
+7,611 pages
 
-The silhouette score dropped from **0.3763** to **0.3046**.
+The silhouette score dropped from 0.3763 to 0.3046.
 
 The drop is expected when clusters are evaluated on clients the model did not see during fitting. The held-out score is therefore treated as the trustworthy evaluation rather than the higher all-data score.
 
-### Leakage checks
+Leakage checks
 
 Three checks were performed:
 
-1. **k-selection leakage:** the search for the best value of `k` was repeated using only training-client data. `k=7` remained the selected value.
-
-2. **Feature leakage:** identifiers and decline-label source columns were excluded from the clustering feature list.
-
-3. **Separate leakage trap:** a data-contract exercise showed that constructing a feature from the same time window as a toy label could inflate accuracy from **0.591** to **1.000**. That pattern was excluded from this project's clustering features.
-
----
-
-## 6. Cluster interpretation
+k-selection leakage: the search for the best value of k was repeated using only training-client data. k=7 remained the selected value.
+Feature leakage: identifiers and decline-label source columns were excluded from the clustering feature list.
+Separate leakage trap: a data-contract exercise showed that constructing a feature from the same time window as a toy label could inflate accuracy from 0.591 to 1.000. That pattern was excluded from this project's clustering features.
+6. Cluster interpretation
 
 The seven clusters were profiled descriptively across all 30,000 pages.
 
 The resulting archetypes include:
 
-* a small cluster of very high-traffic top performers, averaging approximately **112k impressions per 90 days**
-* two larger groups of steady, older content that differ primarily by age
-* a low-CTR, poorly ranked cluster with an average ranking position of approximately **46**
-* a near-zero-impression, high-CTR group that may reflect low-volume or highly targeted queries
-* an unusually high-engagement group
-* a borderline group with weaker cluster fit
+a small cluster of very high-traffic top performers, averaging approximately 112k impressions per 90 days
+two larger groups of steady, older content that differ primarily by age
+a low-CTR, poorly ranked cluster with an average ranking position of approximately 46
+a near-zero-impression, high-CTR group that may reflect low-volume or highly targeted queries
+an unusually high-engagement group
+a borderline group with weaker cluster fit
 
-Approximately **2.6%** of points were poorly matched to their assigned cluster. These observations were concentrated in a borderline-engagement group positioned between clearer behavioral archetypes.
+Approximately 2.6% of points were poorly matched to their assigned cluster. These observations were concentrated in a borderline-engagement group positioned between clearer behavioral archetypes.
 
-### Decline rate by cluster
+Decline rate by cluster
 
-Decline rate was measured descriptively after clustering and was **not used as a clustering feature**.
+Decline rate was measured descriptively after clustering and was not used as a clustering feature.
 
 Across the held-out clients, observed decline rates ranged from:
 
-```text
 14.6% to 61.9%
-```
 
 Because this range was measured on only seven held-out clients, it is treated as descriptive evidence rather than proof that the same pattern generalizes to the full client population.
 
----
-
-## 7. Recommendation
+7. Recommendation
 
 The clustering and observed performance signals are translated into a four-action priority queue.
 
 Every page receives one of the following actions:
 
-| Priority | Action    | Trigger                                                           |  Pages |
-| -------- | --------- | ----------------------------------------------------------------- | -----: |
-| 1        | `REFRESH` | ranks `top_3` / `page_1`, declining >20% MoM, CTR well below tier |  1,447 |
-| 2        | `BOOST`   | position 11–20 ("striking distance"), CTR below expectation       |  4,348 |
-| 3        | `PRUNE`   | deep/unranked, declining, bottom-quartile visibility              |    405 |
-| 4        | `MONITOR` | no strong signal either way                                       | 23,800 |
+Priority	Action	Trigger	Pages
+1	REFRESH	ranks top_3 / page_1, declining >20% MoM, CTR well below tier	1,447
+2	BOOST	position 11–20 ("striking distance"), CTR below expectation	4,348
+3	PRUNE	deep/unranked, declining, bottom-quartile visibility	405
+4	MONITOR	no strong signal either way	23,800
+Human review requirement
 
-### Human review requirement
-
-**23.4%** of the queue is flagged for mandatory human sign-off.
+The action playbook flags 7,012 of 30,000 pages (23.4%) for mandatory human sign-off.
 
 This includes:
 
-* every `PRUNE` candidate
-* top-10%-visibility pages
-* pages in an uncertain score band
-* pages with weak cluster fit
+every PRUNE candidate
+top-10%-visibility pages
+pages in an uncertain score band
+pages with weak cluster fit
 
-### What should never be automated
+The human-review flag is a safeguard, not a model prediction. These pages require manual inspection before any action is taken.
+
+What should never be automated
 
 The system must not automatically perform:
 
-* URL deletion
-* URL redirection without human verification
-* changes to core brand or legal pages
-* site-navigation changes
-* URL-structure changes based solely on the model or playbook output
+URL deletion
+URL redirection without human verification
+changes to core brand or legal pages
+site-navigation changes
+URL-structure changes based solely on the model or playbook output
 
 The action queue is a prioritization tool. A recommendation means that the page is worth human inspection; it does not mean that the action is automatically correct.
 
----
+8. Limitations & honest framing
 
-## 8. Limitations & honest framing
+Cross-sectional, not causal. No page was actually refreshed and re-measured. The results do not show that following a recommendation will improve traffic.
 
-**Cross-sectional, not causal.** No page was actually refreshed and re-measured. The results do not show that following a recommendation will improve traffic.
+Not "predicting Google." The clusters describe similarity across five observed metrics. They do not model Google's ranking algorithm.
 
-**Not "predicting Google."** The clusters describe similarity across five observed metrics. They do not model Google's ranking algorithm.
+Not semantic clustering. No page text or semantic content representation was used.
 
-**Not semantic clustering.** No page text or semantic content representation was used.
+Small held-out sample for decline-rate analysis. The observed 14.6%–61.9% range comes from seven held-out clients and should not be generalized without further validation.
 
-**Small held-out sample for decline-rate analysis.** The observed 14.6%–61.9% range comes from seven held-out clients and should not be generalized without further validation.
+Starter sample, not the full catalog. The main clustering pipeline uses 30,000 pages out of the broader 519,606-content-item catalog.
 
-**Starter sample, not the full catalog.** The main clustering pipeline uses 30,000 pages out of the broader 519,606-content-item catalog.
+Baseline was not re-tested under the same held-out evaluation. The client-held-out validation specifically applies to KMeans.
 
-**Baseline was not re-tested under the same held-out evaluation.** The client-held-out validation specifically applies to KMeans.
+Single snapshot rather than a long time series. The analysis uses observed windows rather than repeated intervention and outcome measurement.
 
-**Single snapshot rather than a long time series.** The analysis uses observed windows rather than repeated intervention and outcome measurement.
+Playbook thresholds are simple, un-tuned cutoffs. They provide an initial queue design and have not yet been validated against real editor decisions or downstream business outcomes.
 
-**Playbook thresholds are simple, un-tuned cutoffs.** They provide an initial queue design and have not yet been validated against real editor decisions or downstream business outcomes.
-
----
-
-## 9. Reproducibility
+9. Reproducibility
 
 Everything in the project can be re-run from the repository.
 
-**Random seed:**
+Random seed:
 
-```text
 42
-```
-
-### Relevant notebooks
-
-* `work/notebooks/capstone.ipynb` — full capstone pipeline
-* `work/notebooks/w05_model.ipynb` — KMeans model and cluster interpretation
-* `work/notebooks/w06_validation_audit.ipynb` — client-grouped validation and leakage audit
-* `work/notebooks/w07_action_playbook.ipynb` — ranked action playbook
-
-### Environment
-
-```bash
+Relevant notebooks
+work/notebooks/capstone.ipynb — full capstone pipeline
+work/notebooks/w05_model.ipynb — KMeans model and cluster interpretation
+work/notebooks/w06_validation_audit.ipynb — client-grouped validation and leakage audit
+work/notebooks/w07_action_playbook.ipynb — ranked action playbook
+Environment
 pip install -r requirements.txt
-```
 
 Then open the notebooks inside:
 
-```text
 work/notebooks/
-```
 
 and run them in sequence.
 
-Repository:
+Ranked action queue
+
+The generated ranked action queue is available as a release asset:
+
+Download ranked action queue
+
+This release asset is provided separately from the repository source tree so the full ranked CSV can be accessed without placing the dataset directly in the repository files.
+
+Repository
 
 https://github.com/yumna-09/FlyRank-ML-Internship
 
----
+10. Acknowledgments & data credit
 
-## 10. Acknowledgments & data credit
-
-Built on the **FlyRank ML Internship dataset** — real, pseudonymized production search and analytics data provided for the internship track.
+Built on the FlyRank ML Internship dataset — real, pseudonymized production search and analytics data provided for the internship track.
 
 https://flyrank.ai
 
----
-
-> **Claims checklist before submitting:** observed / measured / directional / decision-support language throughout · no causal claims without an experiment or causal design · no claim of predicting Google's algorithm · no client-identifying details · KMeans results and action counts match the executed project notebooks.
+Claims checklist before submitting: observed / measured / directional / decision-support language throughout · no causal claims without an experiment or causal design · no claim of predicting Google's algorithm · no client-identifying details · KMeans results and action counts match the executed project notebooks.
