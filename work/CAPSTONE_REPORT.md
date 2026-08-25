@@ -1,13 +1,13 @@
 # Capstone Report — Content Archetype Clustering & Priority Queue
 
-**Author:** Yumna Kashif  
-**Lane:** Structured Content Archetype Clustering  
-**Repository:** [FlyRank-ML-Internship](https://github.com/yumna-09/FlyRank-ML-Internship)  
-**Date:** August 25, 2026
+- **Author:** Yumna Kashif  
+- **Lane:** Structured Content Archetype Clustering  
+- **Repository:** https://github.com/yumna-09/FlyRank-ML-Internship  
+- **Date:** August 25, 2026
 
 ---
 
-## Abstract
+## 0. Abstract
 
 When a website contains far more pages than a content team can manually review, determining which pages deserve attention first becomes a practical prioritization problem.
 
