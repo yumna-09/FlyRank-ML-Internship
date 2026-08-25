@@ -1,0 +1,16 @@
+{
+  "n_pages_scored": 30000,
+  "action_counts": {
+    "MONITOR": 23800,
+    "BOOST": 4348,
+    "REFRESH": 1447,
+    "PRUNE": 405
+  },
+  "pct_requires_human_signoff": 23.37,
+  "monitoring_snapshot": {
+    "mean_baseline_action_score": 0.2405,
+    "pct_flagged_action": 20.67,
+    "pct_negative_silhouette": 2.6,
+    "pct_holdout_client_rows": 25.37
+  }
+}
