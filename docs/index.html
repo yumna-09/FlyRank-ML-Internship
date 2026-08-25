@@ -3,381 +3,2445 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Which pages should a reviewer check first? — Content Archetype Clustering on FlyRank Search Data</title>
-<meta name="description" content="A research paper on grouping content pages by observed search behavior to prioritize a review queue — built and honestly validated on real FlyRank production search data.">
+
+<title>Content Archetype Clustering — FlyRank Capstone</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --bg:#F5F7F6;
-    --surface:#FFFFFF;
-    --ink:#16232E;
-    --ink-soft:#4A5A66;
-    --ink-faint:#7C8B96;
-    --teal:#0E7C86;
-    --teal-dark:#0A5A62;
-    --amber:#D9A441;
-    --red:#C2453D;
-    --line:#D8DEE3;
-    --line-soft:#E7EBEE;
-    --serif:'Source Serif 4', Georgia, serif;
-    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --mono:'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
-  }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{animation:none !important; transition:none !important;} }
 
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:var(--sans); line-height:1.65; font-size:16.5px;
-    -webkit-font-smoothing:antialiased;
-  }
-  a{color:var(--teal-dark);}
-  a:focus-visible, button:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+:root{
+  --paper:#F7F5F1;
+  --ink:#1B1A17;
+  --ink-soft:#4A4740;
+  --rule:#D9D4C9;
+  --rule-strong:#B9B2A2;
 
-  .wrap{max-width:840px; margin:0 auto; padding:0 24px;}
+  /* PRIMARY BRAND COLORS */
+  --navy:#2F4156;
+  --teal:#567C8D;
 
-  /* ---------- top meta bar ---------- */
-  .topbar{
-    border-bottom:1px solid var(--line);
-    background:var(--surface);
-  }
-  .topbar .wrap{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:14px 24px; font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
-    max-width:840px;
-  }
-  .topbar a{color:var(--ink-soft); text-decoration:none;}
-  .topbar a:hover{color:var(--teal-dark); text-decoration:underline;}
+  /* SUPPORTING NEUTRALS */
+  --teal-soft:#E3EBEE;
+  --navy-soft:#E4E9ED;
+  --paper-dark:#EDE8DC;
+  --white:#FFFFFF;
 
-  /* ---------- hero: SERP-snippet motif ---------- */
-  .hero{padding:64px 0 40px;}
-  .serp-mock{
-    background:var(--surface); border:1px solid var(--line); border-radius:10px;
-    padding:20px 24px; margin-bottom:36px;
-  }
-  .serp-mock .breadcrumb{
-    font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
-    letter-spacing:0.02em;
-  }
-  .serp-mock .serp-title{
-    font-family:var(--sans); font-weight:600; font-size:19px; color:var(--teal-dark);
-    margin:4px 0 6px; line-height:1.35;
-  }
-  .serp-mock .serp-snippet{
-    font-size:14.5px; color:var(--ink-soft); margin:0;
-  }
-  .eyebrow{
-    font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--teal-dark); margin:0 0 14px;
-  }
-  h1.title{
-    font-family:var(--serif); font-weight:700; font-size:clamp(28px, 4.2vw, 44px);
-    line-height:1.18; margin:0 0 22px; color:var(--ink);
-  }
-  .byline{
-    font-family:var(--mono); font-size:13px; color:var(--ink-faint); margin-bottom:8px;
-  }
-  .byline a{color:var(--ink-faint);}
+  /* ACTION COLORS — NO ORANGE / RED */
+  --refresh:#2F4156;
+  --boost:#567C8D;
+  --prune:#405A68;
+  --monitor:#C9C2AF;
 
-  /* ---------- abstract box ---------- */
-  .abstract{
-    background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--teal);
-    border-radius:4px; padding:22px 26px; margin:28px 0 8px;
-  }
-  .abstract h2{
-    font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--teal-dark); margin:0 0 10px;
-  }
-  .abstract p{margin:0; font-size:16px; color:var(--ink-soft);}
+  /* TIER COLORS */
+  --tier-top3:#2F4156;
+  --tier-page1:#567C8D;
+  --tier-striking:#6F8F9D;
+  --tier-page35:#8AA3AF;
+  --tier-deep:#A9B8BF;
 
-  /* ---------- sections ---------- */
-  section.block{padding:52px 0; border-top:1px solid var(--line-soft);}
-  .sec-head{display:flex; align-items:baseline; gap:14px; margin-bottom:20px;}
-  .sec-num{
-    font-family:var(--mono); font-size:13px; color:var(--surface); background:var(--ink);
-    border-radius:4px; padding:3px 8px; flex-shrink:0;
-  }
-  section.block h2.sec-title{
-    font-family:var(--serif); font-weight:600; font-size:26px; margin:0; color:var(--ink);
-  }
-  h3{font-family:var(--sans); font-weight:700; font-size:17px; margin:26px 0 10px; color:var(--ink);}
-  p{margin:0 0 14px; color:var(--ink-soft);}
-  ul, ol{margin:0 0 16px; padding-left:22px; color:var(--ink-soft);}
-  li{margin-bottom:8px;}
-  strong{color:var(--ink); font-weight:600;}
-  code{font-family:var(--mono); font-size:0.88em; background:var(--line-soft); padding:1px 5px; border-radius:3px; color:var(--teal-dark);}
+  --accent:#567C8D;
+}
 
-  /* ---------- callout numbers ---------- */
-  .stat-row{display:flex; gap:14px; flex-wrap:wrap; margin:22px 0 26px;}
-  .stat-card{
-    flex:1 1 150px; background:var(--surface); border:1px solid var(--line); border-radius:8px;
-    padding:16px 18px;
-  }
-  .stat-card .num{font-family:var(--mono); font-size:24px; font-weight:600; color:var(--teal-dark);}
-  .stat-card .lbl{font-size:12.5px; color:var(--ink-faint); margin-top:4px; line-height:1.4;}
+*{
+  box-sizing:border-box;
+}
 
-  /* ---------- figures ---------- */
-  figure{margin:26px 0;}
-  figure img{width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:8px; background:var(--surface);}
-  figcaption{
-    font-size:13.5px; color:var(--ink-faint); margin-top:8px; padding-left:2px;
-    border-left:2px solid var(--line); padding-left:10px;
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Source Serif 4', Georgia, serif;
+  line-height:1.6;
+  font-size:17px;
+}
+
+.mono{
+  font-family:'IBM Plex Mono', ui-monospace, monospace;
+}
+
+a{
+  color:var(--ink);
+  text-decoration-color:var(--rule-strong);
+}
+
+a:hover{
+  text-decoration-color:var(--teal);
+}
+
+::selection{
+  background:var(--teal-soft);
+}
+
+
+/* =========================
+   MASTHEAD
+========================= */
+
+.masthead{
+  border-bottom:3px solid var(--navy);
+  padding:22px 6vw 16px;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.masthead .title{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600;
+  font-size:13px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--navy);
+}
+
+.masthead nav{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+}
+
+.masthead nav a{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+
+  color:var(--ink-soft);
+  text-decoration:none;
+
+  border-bottom:1px solid transparent;
+  padding-bottom:2px;
+}
+
+.masthead nav a:hover{
+  color:var(--navy);
+  border-bottom-color:var(--teal);
+}
+
+
+/* =========================
+   LAYOUT
+========================= */
+
+main{
+  max-width:760px;
+  margin:0 auto;
+  padding:0 6vw;
+}
+
+.wide{
+  max-width:920px;
+}
+
+
+/* =========================
+   HERO
+========================= */
+
+.hero{
+  padding:56px 0 20px;
+  border-bottom:1px solid var(--rule);
+}
+
+.kicker{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+
+  color:var(--teal);
+
+  margin-bottom:18px;
+}
+
+h1{
+  font-size:44px;
+  line-height:1.08;
+  font-weight:700;
+
+  margin:0 0 22px;
+
+  letter-spacing:-0.01em;
+  max-width:15ch;
+}
+
+.abstract{
+  font-size:18px;
+  color:var(--ink-soft);
+
+  max-width:62ch;
+
+  margin:0 0 6px;
+}
+
+.byline{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color:var(--ink-soft);
+
+  margin:28px 0 0;
+
+  display:flex;
+  gap:24px;
+  flex-wrap:wrap;
+}
+
+.byline b{
+  color:var(--ink);
+  font-weight:600;
+}
+
+
+/* =========================
+   HERO ACTION QUEUE
+========================= */
+
+.serp{
+  margin:34px 0 44px;
+
+  border:1px solid var(--rule-strong);
+
+  background:var(--white);
+}
+
+.serp-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  padding:10px 16px;
+
+  border-bottom:1px solid var(--rule);
+
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+
+  letter-spacing:.06em;
+  text-transform:uppercase;
+
+  color:var(--ink-soft);
+}
+
+.serp-row{
+  display:grid;
+  grid-template-columns:44px 1fr auto;
+
+  gap:14px;
+  align-items:center;
+
+  padding:13px 16px;
+
+  border-bottom:1px solid var(--rule);
+}
+
+.serp-row:last-child{
+  border-bottom:none;
+}
+
+.serp-rank{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600;
+  font-size:15px;
+
+  color:var(--navy);
+}
+
+.serp-id{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  color:var(--navy);
+}
+
+.serp-reason{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin-top:2px;
+}
+
+.serp-tag{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  font-weight:600;
+
+  letter-spacing:.03em;
+
+  padding:3px 9px;
+  border-radius:3px;
+
+  white-space:nowrap;
+}
+
+.tag-refresh{
+  background:var(--navy-soft);
+  color:var(--navy);
+}
+
+.tag-boost{
+  background:var(--teal-soft);
+  color:var(--teal);
+}
+
+.tag-prune{
+  background:#DCE5E9;
+  color:#405A68;
+}
+
+.tag-monitor{
+  background:var(--paper-dark);
+  color:var(--ink-soft);
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+.btn-row{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+
+  margin-top:26px;
+}
+
+.btn{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+
+  text-decoration:none;
+
+  padding:11px 18px;
+
+  border:1px solid var(--navy);
+  color:var(--navy);
+}
+
+.btn.solid{
+  background:var(--navy);
+  color:var(--paper);
+}
+
+.btn:hover{
+  background:var(--navy);
+  color:var(--paper);
+}
+
+
+/* =========================
+   SECTIONS
+========================= */
+
+section{
+  padding:52px 0;
+  border-bottom:1px solid var(--rule);
+}
+
+section:last-of-type{
+  border-bottom:none;
+}
+
+.sec-num{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+
+  color:var(--teal);
+
+  letter-spacing:.08em;
+
+  margin-bottom:10px;
+}
+
+h2{
+  font-size:27px;
+  font-weight:700;
+
+  margin:0 0 20px;
+
+  letter-spacing:-0.01em;
+
+  color:var(--navy);
+}
+
+h3{
+  font-size:18px;
+  font-weight:600;
+
+  margin:28px 0 10px;
+
+  color:var(--ink);
+}
+
+p{
+  margin:0 0 16px;
+  max-width:66ch;
+}
+
+.lead{
+  font-size:18px;
+  color:var(--ink-soft);
+}
+
+
+/* =========================
+   STAT STRIP
+========================= */
+
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+
+  border:1px solid var(--rule-strong);
+
+  margin:30px 0;
+}
+
+.stat{
+  padding:20px 18px;
+
+  border-right:1px solid var(--rule-strong);
+}
+
+.stat:last-child{
+  border-right:none;
+}
+
+.stat-value{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:25px;
+  font-weight:600;
+
+  color:var(--navy);
+}
+
+.stat-label{
+  margin-top:5px;
+
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:10px;
+  text-transform:uppercase;
+
+  letter-spacing:.05em;
+
+  color:var(--ink-soft);
+}
+
+
+/* =========================
+   RESULTS TABLE
+========================= */
+
+.results-table{
+  width:100%;
+  border-collapse:collapse;
+
+  margin:24px 0;
+
+  font-size:15px;
+}
+
+.results-table th{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:11px;
+  text-transform:uppercase;
+
+  letter-spacing:.05em;
+
+  color:var(--ink-soft);
+
+  text-align:left;
+
+  padding:8px 10px;
+
+  border-bottom:2px solid var(--navy);
+}
+
+.results-table td{
+  padding:12px 10px;
+
+  border-bottom:1px solid var(--rule);
+}
+
+.results-table td.num{
+  font-family:'IBM Plex Mono', monospace;
+
+  text-align:right;
+
+  font-weight:600;
+}
+
+.results-table th.num{
+  text-align:right;
+}
+
+.results-table tr.winner td{
+  background:var(--teal-soft);
+}
+
+.results-table tr.winner td.num{
+  color:var(--teal);
+}
+
+.results-table .note{
+  font-size:12px;
+  color:var(--ink-soft);
+}
+
+
+/* =========================
+   BAR VISUALIZATION
+========================= */
+
+.barviz{
+  margin:28px 0;
+}
+
+.barviz-row{
+  display:grid;
+
+  grid-template-columns:200px 1fr 70px;
+
+  align-items:center;
+
+  gap:12px;
+
+  margin-bottom:10px;
+}
+
+.barviz-label{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:12px;
+
+  color:var(--ink-soft);
+}
+
+.barviz-track{
+  height:20px;
+
+  background:var(--paper-dark);
+
+  position:relative;
+}
+
+.barviz-fill{
+  height:100%;
+
+  background:var(--navy);
+}
+
+.barviz-row.winner .barviz-fill{
+  background:var(--teal);
+}
+
+.barviz-value{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:13px;
+
+  font-weight:600;
+
+  text-align:right;
+}
+
+
+/* =========================
+   FIGURES
+========================= */
+
+.figure{
+  margin:28px 0;
+
+  border:1px solid var(--rule-strong);
+
+  background:var(--white);
+
+  padding:8px;
+}
+
+.figure img{
+  display:block;
+
+  width:100%;
+
+  height:auto;
+}
+
+.figure-cap{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:12px;
+
+  color:var(--ink-soft);
+
+  padding:10px 4px 2px;
+
+  text-align:center;
+}
+
+
+/* =========================
+   CALLOUT
+========================= */
+
+.callout{
+  border-left:3px solid var(--teal);
+
+  padding:4px 0 4px 20px;
+
+  margin:28px 0;
+
+  color:var(--ink-soft);
+
+  font-size:16px;
+}
+
+.callout b{
+  color:var(--navy);
+}
+
+
+/* =========================
+   TWO COLUMN
+========================= */
+
+.two-col{
+  display:grid;
+
+  grid-template-columns:1fr 1fr;
+
+  gap:36px;
+}
+
+
+/* =========================
+   ACTION STACK
+========================= */
+
+.stack{
+  display:flex;
+
+  height:38px;
+
+  border:1px solid var(--navy);
+
+  margin:20px 0 14px;
+}
+
+.stack div{
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:11px;
+
+  color:#fff;
+
+  font-weight:600;
+}
+
+.stack-key{
+  display:flex;
+
+  gap:20px;
+
+  flex-wrap:wrap;
+
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:12px;
+
+  color:var(--ink-soft);
+}
+
+.stack-key span{
+  display:inline-flex;
+
+  align-items:center;
+
+  gap:6px;
+}
+
+.stack-key i{
+  width:9px;
+  height:9px;
+
+  display:inline-block;
+}
+
+
+/* =========================
+   ARCHETYPE CARDS
+========================= */
+
+.archetypes{
+  display:grid;
+
+  grid-template-columns:1fr 1fr;
+
+  gap:0;
+
+  border:1px solid var(--rule-strong);
+
+  margin:26px 0;
+}
+
+.archetype{
+  padding:18px;
+
+  border-right:1px solid var(--rule-strong);
+  border-bottom:1px solid var(--rule-strong);
+}
+
+.archetype:nth-child(2n){
+  border-right:none;
+}
+
+.archetype:nth-last-child(-n+2){
+  border-bottom:none;
+}
+
+.archetype-name{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:11px;
+
+  text-transform:uppercase;
+
+  letter-spacing:.06em;
+
+  color:var(--teal);
+
+  margin-bottom:6px;
+}
+
+.archetype p{
+  font-size:14px;
+
+  color:var(--ink-soft);
+
+  margin:0;
+}
+
+
+/* =========================
+   CODE
+========================= */
+
+code{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:.88em;
+
+  background:var(--paper-dark);
+
+  padding:1px 5px;
+
+  border-radius:3px;
+}
+
+pre{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:13px;
+
+  background:var(--navy);
+
+  color:#EDE8DC;
+
+  padding:18px 20px;
+
+  overflow-x:auto;
+
+  margin:20px 0;
+
+  line-height:1.7;
+}
+
+
+/* =========================
+   TIER LEGEND
+========================= */
+
+.tier-legend{
+  display:flex;
+
+  flex-wrap:wrap;
+
+  gap:0;
+
+  margin:22px 0;
+
+  border:1px solid var(--rule-strong);
+}
+
+.tier-chip{
+  flex:1;
+
+  min-width:110px;
+
+  padding:12px 14px;
+
+  border-right:1px solid var(--rule-strong);
+}
+
+.tier-chip:last-child{
+  border-right:none;
+}
+
+.tier-chip .dot{
+  display:inline-block;
+
+  width:8px;
+  height:8px;
+
+  border-radius:50%;
+
+  margin-right:6px;
+}
+
+.tier-chip .name{
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:11px;
+
+  font-weight:600;
+
+  text-transform:uppercase;
+
+  color:var(--navy);
+}
+
+.tier-chip .desc{
+  font-size:12px;
+
+  color:var(--ink-soft);
+
+  margin-top:4px;
+}
+
+
+/* =========================
+   ACKNOWLEDGMENTS
+   LIGHTER END SECTION
+========================= */
+
+.acknowledgments{
+  padding-top:42px;
+  padding-bottom:42px;
+  border-bottom:none;
+}
+
+.acknowledgments .sec-num{
+  color:var(--ink-soft);
+}
+
+.acknowledgments h2{
+  color:var(--ink-soft);
+  font-size:23px;
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+footer{
+  padding:40px 6vw 60px;
+
+  text-align:center;
+
+  font-family:'IBM Plex Mono', monospace;
+
+  font-size:12px;
+
+  color:var(--ink-soft);
+}
+
+footer a{
+  color:var(--teal);
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:640px){
+
+  h1{
+    font-size:32px;
   }
 
-  /* ---------- table ---------- */
-  table{width:100%; border-collapse:collapse; margin:20px 0; font-size:14.5px;}
-  th, td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line);}
-  th{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); font-weight:600;}
-  td strong{color:var(--ink);}
-  tr:last-child td{border-bottom:none;}
+  .masthead{
+    padding:18px 5vw 14px;
+  }
 
-  /* ---------- limitations box ---------- */
-  .limits-box{
-    background:#FBF6EC; border:1px solid #E9D8AE; border-radius:8px; padding:20px 24px;
+  .masthead nav{
+    gap:12px;
+    flex-wrap:wrap;
   }
-  .limits-box li::marker{color:var(--amber);}
 
-  /* ---------- signoff ---------- */
-  .badge-row{display:flex; gap:10px; flex-wrap:wrap; margin:18px 0;}
-  .badge{
-    font-family:var(--mono); font-size:12px; padding:5px 10px; border-radius:20px;
-    border:1px solid var(--line);
-  }
-  .b-refresh{background:#E9F3F2; color:var(--teal-dark); border-color:#BFDEDB;}
-  .b-boost{background:#FBF1DE; color:#8A6420; border-color:#EAD9A8;}
-  .b-prune{background:#FBEBE9; color:var(--red); border-color:#EFC7C2;}
-  .b-monitor{background:var(--line-soft); color:var(--ink-faint);}
+  .serp-row{
+    grid-template-columns:32px 1fr;
 
-  /* ---------- repro ---------- */
-  .repro-list{list-style:none; padding:0;}
-  .repro-list li{
-    font-family:var(--mono); font-size:14px; padding:8px 0; border-bottom:1px solid var(--line-soft);
+    grid-template-areas:
+      "rank id"
+      ". tag";
   }
-  .repro-list li:last-child{border-bottom:none;}
-  .repro-list a{text-decoration:none;}
-  .repro-list a:hover{text-decoration:underline;}
 
-  /* ---------- credit / footer ---------- */
-  footer{
-    background:var(--ink); color:#C9D2D8; padding:48px 0 40px; margin-top:20px;
+  .serp-row .serp-rank{
+    grid-area:rank;
   }
-  footer .wrap{max-width:840px;}
-  footer h2{
-    font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
-    color:#8FB5B8; margin:0 0 14px;
-  }
-  footer p{color:#C9D2D8;}
-  footer a{color:#7FD1D9;}
-  .credit-box{
-    border:1px solid #2C3B47; border-radius:8px; padding:18px 22px; margin-top:14px;
-    background:#1C2A34;
-  }
-  .credit-box strong{color:#FFFFFF;}
-  .footer-meta{font-family:var(--mono); font-size:12px; color:#6C7E88; margin-top:30px;}
 
-  @media (max-width:600px){
-    body{font-size:15.5px;}
-    .hero{padding:44px 0 28px;}
-    section.block{padding:38px 0;}
-    .stat-card{flex:1 1 100%;}
+  .serp-row .serp-main{
+    grid-area:id;
   }
+
+  .serp-row .serp-tag{
+    grid-area:tag;
+
+    justify-self:start;
+
+    margin-top:6px;
+  }
+
+  .two-col{
+    grid-template-columns:1fr;
+  }
+
+  .stat-grid{
+    grid-template-columns:1fr;
+  }
+
+  .stat{
+    border-right:none;
+    border-bottom:1px solid var(--rule-strong);
+  }
+
+  .stat:last-child{
+    border-bottom:none;
+  }
+
+  .barviz-row{
+    grid-template-columns:1fr;
+    gap:4px;
+  }
+
+  .barviz-value{
+    text-align:left;
+  }
+
+  .archetypes{
+    grid-template-columns:1fr;
+  }
+
+  .archetype{
+    border-right:none;
+  }
+
+  .archetype:nth-last-child(-n+2){
+    border-bottom:1px solid var(--rule-strong);
+  }
+
+  .archetype:last-child{
+    border-bottom:none;
+  }
+
+}
+
 </style>
 </head>
+
+
 <body>
 
-<div class="topbar">
-  <div class="wrap">
-    <span>FlyRank ML Internship — Capstone</span>
-    <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" rel="noopener">github.com/yumna-09/FlyRank-ML-Internship ↗</a>
+
+<!-- =========================
+     MASTHEAD
+========================= -->
+
+<div class="masthead">
+
+  <div class="title">
+    FlyRank ML Capstone
   </div>
+
+  <nav>
+    <a href="#results">Results</a>
+    <a href="#clusters">Archetypes</a>
+    <a href="#queue">Queue</a>
+    <a href="#methodology">Method</a>
+    <a href="#baseline">Baseline</a>
+    <a href="#limits">Limits</a>
+    <a href="#repro">Reproduce</a>
+    <a href="#acknowledgments">Credit</a>
+  </nav>
+
 </div>
 
-<div class="wrap">
-  <div class="hero">
-    <div class="serp-mock">
-      <div class="breadcrumb">flyrank-ml-internship.github.io › capstone</div>
-      <div class="serp-title">Which content pages should a reviewer check first?</div>
-      <p class="serp-snippet">A behavior-based priority queue for content review, built and honestly validated on real FlyRank production search data — with an explicit list of what it can't claim.</p>
+
+<main>
+
+
+<!-- =========================
+     HERO
+========================= -->
+
+<div class="hero">
+
+  <div class="kicker">
+    Structured Content Archetype Clustering
+  </div>
+
+  <h1>
+    Which content pages should a reviewer check first?
+  </h1>
+
+  <p class="abstract">
+    Thirty thousand pages, far more than a content team can inspect by hand.
+    This paper groups pages by observed search behavior, validates those
+    behavioral archetypes against unseen clients, and translates the result
+    into a human-review priority queue — with explicit limits on what the
+    analysis can claim.
+  </p>
+
+  <div class="byline">
+
+    <span>
+      <b>Author</b> Yumna Kashif
+    </span>
+
+    <span>
+      <b>Lane</b> Structured Content Archetype Clustering
+    </span>
+
+    <span>
+      <b>Dataset</b> 30,000 pages
+    </span>
+
+    <span>
+      <b>Method</b> KMeans · k=7
+    </span>
+
+    <span>
+      <b>Split</b> grouped by client · seed 42
+    </span>
+
+  </div>
+
+
+  <!-- ACTION QUEUE HERO -->
+
+  <div class="serp">
+
+    <div class="serp-head">
+
+      <span>
+        Top of the action queue — 30,000 pages
+      </span>
+
+      <span>
+        four actions
+      </span>
+
     </div>
 
-    <p class="eyebrow">Research Paper — Applied Search Intelligence</p>
-    <h1 class="title">Content Archetype Clustering: Grouping Pages by Observed Behavior to Prioritize a Review Queue</h1>
-    <p class="byline">Yumna Kashif · FlyRank ML Internship, Applied Search Intelligence track · <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" rel="noopener">repo ↗</a></p>
 
-    <div class="abstract">
-      <h2>Abstract</h2>
+    <div class="serp-row">
+
+      <div class="serp-rank">01</div>
+
+      <div class="serp-main">
+
+        <div class="serp-id">
+          REFRESH
+        </div>
+
+        <div class="serp-reason">
+          top visibility + declining >20% + CTR below position expectation
+        </div>
+
+      </div>
+
+      <div class="serp-tag tag-refresh">
+        1,447 pages
+      </div>
+
+    </div>
+
+
+    <div class="serp-row">
+
+      <div class="serp-rank">02</div>
+
+      <div class="serp-main">
+
+        <div class="serp-id">
+          BOOST
+        </div>
+
+        <div class="serp-reason">
+          striking-distance position + CTR below expectation
+        </div>
+
+      </div>
+
+      <div class="serp-tag tag-boost">
+        4,348 pages
+      </div>
+
+    </div>
+
+
+    <div class="serp-row">
+
+      <div class="serp-rank">03</div>
+
+      <div class="serp-main">
+
+        <div class="serp-id">
+          PRUNE
+        </div>
+
+        <div class="serp-reason">
+          deep or unranked + declining + bottom-quartile visibility
+        </div>
+
+      </div>
+
+      <div class="serp-tag tag-prune">
+        405 pages
+      </div>
+
+    </div>
+
+
+    <div class="serp-row">
+
+      <div class="serp-rank">04</div>
+
+      <div class="serp-main">
+
+        <div class="serp-id">
+          MONITOR
+        </div>
+
+        <div class="serp-reason">
+          no strong signal requiring immediate intervention
+        </div>
+
+      </div>
+
+      <div class="serp-tag tag-monitor">
+        23,800 pages
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="btn-row">
+
+    <a
+      class="btn solid"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md"
+      target="_blank"
+    >
+      Read the full report ↗
+    </a>
+
+    <a
+      class="btn"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb"
+      target="_blank"
+    >
+      View the notebook ↗
+    </a>
+
+    <a
+      class="btn"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship"
+      target="_blank"
+    >
+      Repository ↗
+    </a>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     RESULTS
+========================= -->
+
+<section id="results">
+
+  <div class="sec-num">
+    01 — Results
+  </div>
+
+  <h2>
+    Honest validation changes the number
+  </h2>
+
+  <p class="lead">
+    The all-data KMeans evaluation reaches 0.3763 silhouette, but the
+    client-held-out evaluation is the number to trust: 0.3046.
+  </p>
+
+
+  <div class="stat-grid">
+
+    <div class="stat">
+
+      <div class="stat-value">
+        0.0013
+      </div>
+
+      <div class="stat-label">
+        baseline silhouette
+      </div>
+
+    </div>
+
+
+    <div class="stat">
+
+      <div class="stat-value">
+        0.3763
+      </div>
+
+      <div class="stat-label">
+        all-data KMeans
+      </div>
+
+    </div>
+
+
+    <div class="stat">
+
+      <div class="stat-value">
+        0.3046
+      </div>
+
+      <div class="stat-label">
+        honest held-out KMeans
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <table class="results-table">
+
+    <thead>
+
+      <tr>
+
+        <th>
+          Approach
+        </th>
+
+        <th class="num">
+          Silhouette
+        </th>
+
+        <th>
+          Reading it
+        </th>
+
+      </tr>
+
+    </thead>
+
+
+    <tbody>
+
+      <tr>
+
+        <td>
+          Baseline: rule-based buckets
+        </td>
+
+        <td class="num">
+          0.0013
+        </td>
+
+        <td class="note">
+          essentially no natural separation
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          KMeans · k=7 · all-data fit
+        </td>
+
+        <td class="num">
+          0.3763
+        </td>
+
+        <td class="note">
+          strong, but evaluated on data used to fit
+        </td>
+
+      </tr>
+
+
+      <tr class="winner">
+
+        <td>
+          KMeans · k=7 · client-held-out
+        </td>
+
+        <td class="num">
+          0.3046
+        </td>
+
+        <td class="note">
+          trustworthy evaluation on unseen clients
+        </td>
+
+      </tr>
+
+    </tbody>
+
+  </table>
+
+
+  <div class="barviz">
+
+    <div class="barviz-row">
+
+      <div class="barviz-label">
+        baseline rule
+      </div>
+
+      <div class="barviz-track">
+
+        <div
+          class="barviz-fill"
+          style="width:0.13%"
+        ></div>
+
+      </div>
+
+      <div class="barviz-value">
+        .0013
+      </div>
+
+    </div>
+
+
+    <div class="barviz-row">
+
+      <div class="barviz-label">
+        KMeans · all data
+      </div>
+
+      <div class="barviz-track">
+
+        <div
+          class="barviz-fill"
+          style="width:37.63%"
+        ></div>
+
+      </div>
+
+      <div class="barviz-value">
+        .3763
+      </div>
+
+    </div>
+
+
+    <div class="barviz-row winner">
+
+      <div class="barviz-label">
+        KMeans · held-out
+      </div>
+
+      <div class="barviz-track">
+
+        <div
+          class="barviz-fill"
+          style="width:30.46%"
+        ></div>
+
+      </div>
+
+      <div class="barviz-value">
+        .3046
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="figure">
+
+    <img
+      src="img/baseline_vs_model.png"
+      alt="Baseline rule-based buckets compared with KMeans honest held-out silhouette score"
+    >
+
+    <div class="figure-cap">
+      Fig. 1 — Baseline vs KMeans, same feature space
+    </div>
+
+  </div>
+
+
+  <div class="callout">
+
+    <b>The important result is not 0.3763.</b>
+    The important result is that after holding out entire clients,
+    KMeans still reaches 0.3046 while the rule-based baseline sits at
+    0.0013. The validation design deliberately gives up some score in
+    exchange for a more trustworthy estimate of generalization.
+
+  </div>
+
+
+  <div class="figure">
+
+    <img
+      src="img/validation_drop.png"
+      alt="Silhouette score dropping from 0.3763 all-data evaluation to 0.3046 client-held-out evaluation"
+    >
+
+    <div class="figure-cap">
+      Fig. 2 — Validation drop after switching to unseen-client evaluation
+    </div>
+
+  </div>
+
+
+  <h3>
+    The split-integrity check
+  </h3>
+
+  <p>
+    The first evaluation fit the KMeans centroids and scored the same
+    30,000 rows. That produces a useful descriptive number, but it does
+    not answer whether the discovered archetypes generalize to a client
+    the model never saw.
+  </p>
+
+  <p>
+    The honest evaluation grouped by <code>client_id</code>, fitting on
+    approximately 80% of clients and scoring on approximately 20% held-out
+    clients. The held-out set contained <b>7 clients and 7,611 pages</b>.
+  </p>
+
+</section>
+
+
+<!-- =========================
+     CLUSTERS
+========================= -->
+
+<section id="clusters">
+
+  <div class="sec-num">
+    02 — Behavioral Archetypes
+  </div>
+
+  <h2>
+    Seven groups, not seven labels invented by hand
+  </h2>
+
+  <p class="lead">
+    KMeans groups pages using five standardized observed signals:
+    impressions, CTR, average position, engagement rate, and content age.
+  </p>
+
+
+  <div class="figure">
+
+    <img
+      src="img/decline_by_cluster.png"
+      alt="Observed decline rate by cluster on held-out clients"
+    >
+
+    <div class="figure-cap">
+      Fig. 3 — Observed decline rate by cluster on held-out clients
+    </div>
+
+  </div>
+
+
+  <div class="callout">
+
+    <b>Interpretation, not prediction:</b>
+    decline rate was measured after clustering and was not used as a
+    clustering feature. Across the held-out clients, observed decline
+    rates ranged from <b>14.6% to 61.9%</b>. Because this measurement
+    comes from only seven held-out clients, it is treated as descriptive
+    evidence rather than a generalized production rate.
+
+  </div>
+
+<div class="archetypes">
+
+  <!-- CLUSTER 6 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      High-traffic performers
+    </div>
+
+    <p>
+      Cluster 6 is a small group of very high-visibility pages,
+      averaging approximately 112k impressions over 90 days, with
+      typical CTR and strong average position.
+    </p>
+
+  </div>
+
+
+  <!-- CLUSTER 0 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      Established / older content
+    </div>
+
+    <p>
+      Cluster 0 contains established pages averaging approximately
+      383 days old, with around 3.9k impressions, 0.42 CTR, and
+      an average position of 11.2.
+    </p>
+
+  </div>
+
+
+  <!-- CLUSTER 1 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      Newer / steady content
+    </div>
+
+    <p>
+      Cluster 1 is the largest group of relatively newer pages,
+      averaging approximately 150 days old, with around 4.0k
+      impressions, 0.29 CTR, and an average position of 11.6.
+    </p>
+
+  </div>
+
+
+  <!-- CLUSTER 4 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      Low-CTR / weak ranking
+    </div>
+
+    <p>
+      Cluster 4 contains pages with weak click-through behavior and
+      poor rankings, averaging approximately 0.10 CTR and position
+      46.2, with around 2.8k impressions.
+    </p>
+
+  </div>
+
+
+  <!-- CLUSTER 3 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      Low-volume / high-CTR
+    </div>
+
+    <p>
+      Cluster 3 is a very small group averaging only about 4
+      impressions but an unusually high 41.35 CTR and a strong
+      average position of 6.2.
+    </p>
+
+  </div>
+
+
+  <!-- CLUSTER 2 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      High-engagement pages
+    </div>
+
+    <p>
+      Cluster 2 is a small unusual group with approximately 97.34
+      average engagement, despite relatively low traffic of around
+      403 impressions and an average position of 18.2.
+    </p>
+
+  </div>
+
+
+  <!-- CLUSTER 5 -->
+  <div class="archetype">
+
+    <div class="archetype-name">
+      Borderline-fit content
+    </div>
+
+    <p>
+      Cluster 5 contains pages with intermediate engagement behavior
+      and weaker cluster separation. Most of the negative-silhouette
+      points were concentrated here, showing where KMeans has the
+      most difficulty assigning a clear archetype.
+    </p>
+
+  </div>
+
+</div>
+
+  <p>
+  
+   The seven clusters were profiled descriptively across all 30,000
+   pages. Their profiles are based on measured differences in traffic,
+   CTR, ranking position, engagement, and content age. The clusters
+   are behavioral groupings rather than semantic categories, and no
+   page text was used.
+  </p>
+
+</section>
+
+
+<!-- =========================
+     QUEUE
+========================= -->
+
+<section id="queue">
+
+  <div class="sec-num">
+    03 — Ranked Recommendations
+  </div>
+
+  <h2>
+    The action queue
+  </h2>
+
+  <p class="lead">
+    Every page receives one of four review actions. The queue is a
+    prioritization tool: the higher-priority rows deserve human inspection
+    first, not automatic execution.
+  </p>
+
+
+  <div class="stack">
+
+    <div
+      style="width:4.8233%; background:var(--refresh);"
+      title="REFRESH"
+    >
+      1,447
+    </div>
+
+    <div
+      style="width:14.4933%; background:var(--boost);"
+      title="BOOST"
+    >
+      4,348
+    </div>
+
+    <div
+      style="width:1.35%; background:var(--prune);"
+      title="PRUNE"
+    >
+      405
+    </div>
+
+    <div
+      style="width:79.3334%; background:var(--monitor); color:var(--ink);"
+      title="MONITOR"
+    >
+      23,800
+    </div>
+
+  </div>
+
+
+  <div class="stack-key">
+
+    <span>
+      <i style="background:var(--refresh)"></i>
+      refresh — 1,447
+    </span>
+
+    <span>
+      <i style="background:var(--boost)"></i>
+      boost — 4,348
+    </span>
+
+    <span>
+      <i style="background:var(--prune)"></i>
+      prune — 405
+    </span>
+
+    <span>
+      <i style="background:var(--monitor)"></i>
+      monitor — 23,800
+    </span>
+
+  </div>
+
+
+  <div class="figure">
+
+    <img
+      src="img/action_distribution.png"
+      alt="Action distribution across 30,000 pages"
+    >
+
+    <div class="figure-cap">
+      Fig. 4 — Action queue distribution across all 30,000 pages
+    </div>
+
+  </div>
+
+
+  <table class="results-table">
+
+    <thead>
+
+      <tr>
+
+        <th>
+          Priority
+        </th>
+
+        <th>
+          Action
+        </th>
+
+        <th>
+          Trigger
+        </th>
+
+        <th class="num">
+          Pages
+        </th>
+
+      </tr>
+
+    </thead>
+
+
+    <tbody>
+
+      <tr>
+
+        <td>
+          1
+        </td>
+
+        <td>
+          <b>REFRESH</b>
+        </td>
+
+        <td class="note">
+          top 3 / page 1, declining &gt;20% MoM, CTR well below tier
+        </td>
+
+        <td class="num">
+          1,447
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          2
+        </td>
+
+        <td>
+          <b>BOOST</b>
+        </td>
+
+        <td class="note">
+          position 11–20, CTR below expectation
+        </td>
+
+        <td class="num">
+          4,348
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          3
+        </td>
+
+        <td>
+          <b>PRUNE</b>
+        </td>
+
+        <td class="note">
+          deep / unranked, declining, bottom-quartile visibility
+        </td>
+
+        <td class="num">
+          405
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          4
+        </td>
+
+        <td>
+          <b>MONITOR</b>
+        </td>
+
+        <td class="note">
+          no strong signal requiring immediate action
+        </td>
+
+        <td class="num">
+          23,800
+        </td>
+
+      </tr>
+
+    </tbody>
+
+  </table>
+
+
+  <div class="callout">
+
+    <b>23.4% requires mandatory human sign-off.</b>
+    Every PRUNE candidate, top-10%-visibility page, uncertain-band score,
+    and weak cluster-fit page is flagged for human review before action.
+
+  </div>
+
+
+  <h3>
+    What should never be automated
+  </h3>
+
+  <p>
+    The system must not automatically delete URLs, redirect URLs without
+    human verification, modify core brand or legal pages, change site
+    navigation, or restructure URLs based solely on the model or playbook
+    output.
+  </p>
+
+
+  <p>
+    A recommendation means <b>“this page is worth inspecting.”</b>
+    It does not mean the recommended action is automatically correct.
+  </p>
+
+</section>
+
+
+<!-- =========================
+     METHODOLOGY
+========================= -->
+
+<section id="methodology">
+
+  <div class="sec-num">
+    04 — Data & Methodology
+  </div>
+
+  <h2>
+    What went in, what didn't, and how it was tested
+  </h2>
+
+
+  <div class="two-col">
+
+    <div>
+
+      <h3>
+        Main sample
+      </h3>
+
       <p>
-        When a site has far more pages than a review team can check by hand, which page should a human look at first?
-        This paper groups 30,000 real content pages by five observed signals — impressions, click-through rate, ranking position, engagement, and age — using KMeans clustering, and compares the result to a transparent hand-written rule.
-        Clustering was validated honestly by holding out entire clients (not just rows), which dropped the separation score from an inflated 0.376 to a real 0.305 — still far ahead of the rule-based baseline's 0.0013.
-        The resulting archetypes turn into a ranked action playbook — refresh, boost, prune, or monitor — with reason codes, a mandatory human-review flag on 23% of pages, and an explicit no-go list for what should never be automated.
-        This is decision-support for a content team, not a causal or production system: every claim below is stated at the strength its evidence actually carries.
+        30,000 anonymized content pages, one row per content item,
+        represented by metrics aggregated over a trailing 90-day window.
       </p>
+
     </div>
+
+
+    <div>
+
+      <h3>
+        Broader release
+      </h3>
+
+      <p>
+        The warehouse release contains 78.8M daily performance rows,
+        519,606 distinct content items, and 104 clients.
+      </p>
+
+    </div>
+
+
+    <div>
+
+      <h3>
+        Clustering features
+      </h3>
+
+      <p>
+        Five standardized observed signals: impressions, CTR, average
+        ranking position, engagement rate, and content age.
+      </p>
+
+    </div>
+
+
+    <div>
+
+      <h3>
+        Model
+      </h3>
+
+      <p>
+        KMeans clustering with k selected by silhouette search over
+        k=2 through k=7. The winning value was k=7.
+      </p>
+
+    </div>
+
   </div>
-</div>
 
-<div class="wrap">
 
-  <section class="block" id="intro">
-    <div class="sec-head"><span class="sec-num">01</span><h2 class="sec-title">Introduction &amp; Problem</h2></div>
-    <p>
-      FlyRank publishes content into client websites at a scale no team can review page-by-page: the production catalog behind this project holds <strong>519,606 content items across 104 clients</strong>. Pages that rank well quietly decay over time — rankings slip, clicks drop — and by the time a team notices, the page has often been losing traffic for weeks.
-    </p>
-    <p>
-      FlyRank's product already flags pages today with hand-written rules (a health score, quick-win tags). Those rules work and run in production, but they test one condition at a time. A page can have high impressions and a broken click-through rate, or low impressions and strong engagement — real pages fail on combinations of signals, not one threshold. This paper asks whether <strong>grouping pages by several observed signals at once</strong>, instead of one rule at a time, gives a reviewer a sharper starting point.
-    </p>
-    <p>
-      The decision this supports: which pages a content strategist opens first this week. The cost of getting it wrong: a page wrongly read as healthy keeps losing traffic unnoticed; a page wrongly flagged burns editorial hours it didn't need. Every output here is built to be checked by a person before anything happens to a page — never to act on its own.
-    </p>
-  </section>
+  <h3>
+    Why KMeans?
+  </h3>
 
-  <section class="block" id="data">
-    <div class="sec-head"><span class="sec-num">02</span><h2 class="sec-title">Data</h2></div>
-    <p>
-      This project draws on the <strong>FlyRank ML Internship warehouse release</strong> (Hugging Face, gated dataset, instant approval), build id <code>flyrank_pseudonymized_warehouse_release_v20260703</code>, exported 2026-07-03 from FlyRank's real production search-and-analytics warehouse — Google Search Console and Google Analytics data, synced daily and pseudonymized before release. No client names, domains, URLs, page titles, or raw search queries appear anywhere in it.
-    </p>
-    <div class="stat-row">
-      <div class="stat-card"><div class="num">78.8M</div><div class="lbl">rows in the full daily performance fact table (daily × client × content)</div></div>
-      <div class="stat-card"><div class="num">519,606</div><div class="lbl">distinct content items in the release</div></div>
-      <div class="stat-card"><div class="num">30,000</div><div class="lbl">rows used for this paper's main pipeline (anonymized starter sample)</div></div>
+  <p>
+    This lane does not primarily ask for a predicted target. It asks whether
+    pages can be grouped into understandable behavioral archetypes.
+    KMeans provides cluster membership that can be profiled and translated
+    into a review workflow without pretending that the clusters represent
+    semantic page topics or Google's ranking system.
+  </p>
+
+
+  <h3>
+    Client-held-out validation
+  </h3>
+
+  <p>
+    Approximately 80% of clients were used for fitting and approximately
+    20% were held out. Centroids were fitted only on training-client rows,
+    then used to score the held-out clients without fitting on them.
+  </p>
+
+
+  <div class="tier-legend">
+
+    <div class="tier-chip">
+
+      <span
+        class="dot"
+        style="background:var(--tier-top3)"
+      ></span>
+
+      <span class="name">
+        Top 3
+      </span>
+
+      <div class="desc">
+        positions 1–3
+      </div>
+
     </div>
-    <p>
-      Two different pulls from that release were used:
-    </p>
-    <ul>
-      <li><strong>Data-contract exercise:</strong> a March 2026 slice queried directly from the warehouse with DuckDB — 9,841,378 rows, 331,437 content items, 55 clients — used to verify grain and run a real feature-leakage trap, not the main modeling pipeline.</li>
-      <li><strong>Main clustering and playbook pipeline (this paper's results):</strong> the bundled anonymized starter sample, 30,000 rows, one row per content item, pre-aggregated over a trailing 90-day window.</li>
-    </ul>
-    <p><strong>Excluded, and why:</strong></p>
-    <ul>
-      <li>GA4 columns where availability wasn't confirmed (95.8% of the March slice) — an unmeasured zero is not a real zero.</li>
-      <li>FlyRank's own product decision flags (health score, priority score, action type) — not shipped in this release, and would be circular as model inputs.</li>
-      <li><code>trend_direction</code> / <code>trend_pct</code> — the source of the decline label — excluded from every clustering feature, used only afterward, descriptively.</li>
-      <li><code>content_id</code> / <code>client_id</code> — pseudonymous hashes, used only for grouping and the client-level train/test split, never as feature values.</li>
-    </ul>
-  </section>
 
-  <section class="block" id="method">
-    <div class="sec-head"><span class="sec-num">03</span><h2 class="sec-title">Methodology</h2></div>
-    <p>
-      <strong>Features (5, all trailing-90-day observed metrics):</strong> impressions, click-through rate, average ranking position, engagement rate, and content age — standardized before clustering so no single scale dominates.
-    </p>
-    <p><strong>Baseline, built first:</strong> a transparent rule with no fitted weights. Two candidate signals were tested against the data before either went into it:</p>
-    <ul>
-      <li><em>Staleness → decline?</em> <strong>Mixed.</strong> Decline rate rises from 51.1% to 61.1% across most freshness buckets, then drops to 47.1% in the oldest bucket (n=174) — the opposite of the assumption. Dropped.</li>
-      <li><em>Position → CTR?</em> <strong>Confirmed.</strong> Median CTR falls in lock-step with ranking position across every well-sampled bucket (top_3 0.20% → deep 0.00%). Kept as the rule's core signal.</li>
-    </ul>
-    <p>
-      The baseline score multiplies a visibility percentile by a CTR-gap percentile, restricted to eligible pages, sorted into three fixed-threshold buckets.
-    </p>
-    <p>
-      <strong>Model:</strong> KMeans, k chosen by silhouette search over k=2..7 (k=7 won). Chosen over a supervised model because this lane has no label to predict, and its output — cluster membership — is easy to explain to a non-technical reviewer.
-    </p>
-    <p>
-      <strong>Validation:</strong> the first fit was leaky — centroids fit and scored on the same 30,000 rows. The honest fix: split all 55 client IDs (not rows) 80/20, fit centroids on the 80% train-client rows only, then score strictly on the 20% held-out clients the model never touched — testing whether archetypes generalize to a brand-new client.
-    </p>
-    <p>
-      <strong>Leakage checks run:</strong> (1) k-selection leakage — re-ran the k search on train-clients-only data; k=7 won there too, so the winning k doesn't depend on seeing the held-out clients. (2) Feature leakage — confirmed IDs and the label source never enter the feature list. (3) A separate label-leakage trap (data-contract exercise) showed a feature built from the same window as a toy label pushed accuracy from a believable 0.591 to a suspicious 1.000 — that pattern is excluded from every model in this paper.
-    </p>
-  </section>
 
-  <section class="block" id="results">
-    <div class="sec-head"><span class="sec-num">04</span><h2 class="sec-title">Results (vs. Baseline)</h2></div>
-    <p>Same feature space, same 30,000 rows — rule-based buckets vs. KMeans:</p>
-    <table>
-      <tr><th>Method</th><th>Silhouette score</th><th>Reading</th></tr>
-      <tr><td>Baseline: rule-based buckets</td><td><strong>0.0013</strong></td><td>essentially no natural separation</td></tr>
-      <tr><td>KMeans (k=7), all-data fit + score</td><td>0.3763</td><td>strong — but inflated (leaky)</td></tr>
-      <tr><td>KMeans (k=7), honest client-held-out</td><td><strong>0.3046</strong></td><td>the trustworthy number</td></tr>
-    </table>
-    <figure>
-      <img src="img/baseline_vs_model.png" alt="Bar chart comparing baseline rule-bucket silhouette score (0.0013) against honest held-out KMeans silhouette score (0.3046)">
-      <figcaption>The rule-based buckets, built to flag one CTR problem, barely separate the data at all. KMeans — even scored honestly on unseen clients — finds real structure.</figcaption>
-    </figure>
-    <figure>
-      <img src="img/validation_drop.png" alt="Bar chart showing silhouette score dropping from 0.376 (leaky, all-data) to 0.305 (honest, held-out clients)">
-      <figcaption>The honest re-check costs some score — expected when centroids are judged on clients they never saw — but the drop is modest, and 0.305 still clears the baseline by a wide margin.</figcaption>
-    </figure>
-    <h3>Cluster archetypes</h3>
-    <p>
-      Profiled on all 30,000 rows: one small cluster of very high-traffic top performers (avg. 112k impressions/90d); two large clusters of steady, older content differing mainly by age; one low-CTR, poorly-ranked cluster (avg. position 46); and a few small, unusual clusters — one near-zero-impression/high-CTR group (likely low-volume, highly targeted queries), one unusually high-engagement group. About 2.6% of all points are poorly matched to their assigned cluster, concentrated in one borderline-engagement group sitting between two clearer archetypes.
-    </p>
-    <figure>
-      <img src="img/decline_by_cluster.png" alt="Horizontal bar chart of decline rate by cluster on held-out clients, ranging from 14.6% to 61.9%">
-      <figcaption>Descriptive only — decline rate wasn't used to build the clusters. Measured on 7 held-out clients (7,611 pages); see Limitations on sample size.</figcaption>
-    </figure>
-  </section>
+    <div class="tier-chip">
 
-  <section class="block" id="limits">
-    <div class="sec-head"><span class="sec-num">05</span><h2 class="sec-title">Limitations &amp; Honest Framing</h2></div>
-    <div class="limits-box">
-      <ul>
-        <li><strong>Cross-sectional, not causal.</strong> No page was actually refreshed and re-measured — nothing here says acting on a recommendation <em>will</em> improve traffic, only that certain pages look worth reviewing first.</li>
-        <li><strong>Not "predicting Google."</strong> Clusters group behavior on 5 measured signals, not the ranking algorithm itself, and this is not semantic clustering — no page text was used.</li>
-        <li><strong>Small held-out sample for the decline-rate finding.</strong> The 14.6%–61.9% range is measured on 7 held-out clients — real, but too small to say it generalizes to the full 104-client base.</li>
-        <li><strong>Starter sample, not the full catalog.</strong> The main pipeline ran on 30,000 of 519,606 content items; cluster shapes haven't been re-validated at full scale.</li>
-        <li><strong>Baseline wasn't re-tested under the same honest split</strong> — only KMeans was re-scored on held-out clients; the rule buckets were evaluated once, on all data.</li>
-        <li><strong>Single snapshot, not a real time series.</strong> "Decay" here means declining in one 30-vs-prior-30-day window, observed once.</li>
-        <li><strong>Playbook thresholds are simple, un-tuned cutoffs</strong> — a starting shape for the queue, not yet validated against real editor decisions or downstream outcomes.</li>
-      </ul>
+      <span
+        class="dot"
+        style="background:var(--tier-page1)"
+      ></span>
+
+      <span class="name">
+        Page 1
+      </span>
+
+      <div class="desc">
+        positions 4–10
+      </div>
+
     </div>
-  </section>
 
-  <section class="block" id="playbook">
-    <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">Ranked Recommendations</h2></div>
-    <p>
-      Every page in the sample gets one of four actions, driven only by real, observed signals — position tier, CTR gap, decline label, impressions, and cluster fit. No invented columns.
-    </p>
-    <figure>
-      <img src="img/action_distribution.png" alt="Bar chart of action counts: MONITOR 23,800, BOOST 4,348, REFRESH 1,447, PRUNE 405">
-      <figcaption>Priority queue distribution across all 30,000 pages, from the executed playbook notebook.</figcaption>
-    </figure>
-    <table>
-      <tr><th>Priority</th><th>Action</th><th>Trigger</th><th>n</th></tr>
-      <tr><td>1</td><td><span class="badge b-refresh">REFRESH</span></td><td>ranks top_3/page_1, declining &gt;20% MoM, CTR well below tier</td><td>1,447</td></tr>
-      <tr><td>2</td><td><span class="badge b-boost">BOOST</span></td><td>position 11–20 ("striking distance"), CTR below expectation</td><td>4,348</td></tr>
-      <tr><td>3</td><td><span class="badge b-prune">PRUNE</span></td><td>deep/unranked, declining, bottom-quartile visibility</td><td>405</td></tr>
-      <tr><td>4</td><td><span class="badge b-monitor">MONITOR</span></td><td>no strong signal either way</td><td>23,800</td></tr>
-    </table>
-    <p>
-      <strong>23.4%</strong> of the queue is flagged for mandatory human sign-off — every PRUNE candidate, every top-10%-visibility page, every score in the uncertain band, and every weak cluster fit.
-    </p>
-    <p><strong>Never automated:</strong> URL deletion or redirection without human verification; core brand/legal pages (hard-excluded); site navigation or URL-structure changes based solely on this output.</p>
-    <p>
-      Full logic: <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb" target="_blank" rel="noopener">work/notebooks/w07_action_playbook.ipynb ↗</a>
-    </p>
-  </section>
 
-  <section class="block" id="repro">
-    <div class="sec-head"><span class="sec-num">07</span><h2 class="sec-title">Reproducibility</h2></div>
-    <p>Everything above can be re-run from a fresh clone of the repo. Random seed <code>42</code> throughout.</p>
-    <ul class="repro-list">
-      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" rel="noopener">Repository root</a></li>
-      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb" target="_blank" rel="noopener">work/notebooks/capstone.ipynb</a> — this paper's full pipeline, mirrored section-by-section</li>
-      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w05_model.ipynb" target="_blank" rel="noopener">work/notebooks/w05_model.ipynb</a> — KMeans model + cluster interpretation</li>
-      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w06_validation_audit.ipynb" target="_blank" rel="noopener">work/notebooks/w06_validation_audit.ipynb</a> — honest client-grouped validation</li>
-      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb" target="_blank" rel="noopener">work/notebooks/w07_action_playbook.ipynb</a> — ranked action playbook</li>
-      <li>→ <a href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/requirements.txt" target="_blank" rel="noopener">requirements.txt</a> — environment</li>
-    </ul>
-    <p>To rerun: clone the repo, <code>pip install -r requirements.txt</code>, open any notebook in <code>work/notebooks/</code>, Runtime → Run all.</p>
-  </section>
+    <div class="tier-chip">
 
-</div>
+      <span
+        class="dot"
+        style="background:var(--tier-striking)"
+      ></span>
+
+      <span class="name">
+        Striking
+      </span>
+
+      <div class="desc">
+        positions 11–20
+      </div>
+
+    </div>
+
+
+    <div class="tier-chip">
+
+      <span
+        class="dot"
+        style="background:var(--tier-page35)"
+      ></span>
+
+      <span class="name">
+        Page 3–5
+      </span>
+
+      <div class="desc">
+        positions 21–50
+      </div>
+
+    </div>
+
+
+    <div class="tier-chip">
+
+      <span
+        class="dot"
+        style="background:var(--tier-deep)"
+      ></span>
+
+      <span class="name">
+        Deep
+      </span>
+
+      <div class="desc">
+        positions 50+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <h3>
+    Leakage checks
+  </h3>
+
+  <p>
+    Three checks were performed: k-selection was repeated using training
+    clients only and still selected k=7; identifiers and label-source
+    columns were excluded from the clustering features; and a separate
+    data-contract exercise demonstrated how a same-window feature could
+    inflate toy-label accuracy from 0.591 to 1.000. That leakage pattern
+    was excluded from the clustering pipeline.
+  </p>
+
+</section>
+
+
+<!-- =========================
+     BASELINE
+========================= -->
+
+<section id="baseline">
+
+  <div class="sec-num">
+    05 — Baseline
+  </div>
+
+  <h2>
+    A simple rule had to come first
+  </h2>
+
+  <p class="lead">
+    Before fitting KMeans, a transparent rule-based baseline was built
+    without learned weights.
+  </p>
+
+
+  <div class="two-col">
+
+    <div>
+
+      <h3>
+        Signal check
+      </h3>
+
+      <p>
+        Staleness versus decline was mixed. Decline rose from 51.1% in
+        younger pages to 61.1% across later freshness buckets, but fell
+        to 47.1% in the oldest bucket. Because the relationship was not
+        consistent, staleness was excluded from the baseline score.
+      </p>
+
+    </div>
+
+
+    <div>
+
+      <h3>
+        Position vs CTR
+      </h3>
+
+      <p>
+        The position-to-CTR relationship was confirmed. Median CTR generally
+        falls as ranking position weakens, supporting a position-adjusted
+        CTR gap as the baseline's core signal.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <h3>
+    Baseline formula
+  </h3>
+
+  <pre>eligible * visibility_score * ctr_gap_norm</pre>
+
+
+  <p>
+    Eligible pages satisfy:
+  </p>
+
+  <pre>impressions_90d >= 500
+AND avg_position > 0
+AND position_tier != 'no_data'</pre>
+
+
+  <table class="results-table">
+
+    <thead>
+
+      <tr>
+
+        <th>
+          Action
+        </th>
+
+        <th>
+          Score condition
+        </th>
+
+        <th class="num">
+          Pages
+        </th>
+
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      <tr>
+
+        <td>
+          prioritize_ctr_review
+        </td>
+
+        <td>
+          ≥ 0.6
+        </td>
+
+        <td class="num">
+          3,912
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          review_ctr
+        </td>
+
+        <td>
+          &gt; 0 and &lt; 0.6
+        </td>
+
+        <td class="num">
+          12,814
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          monitor
+        </td>
+
+        <td>
+          = 0
+        </td>
+
+        <td class="num">
+          13,274
+        </td>
+
+      </tr>
+
+    </tbody>
+
+  </table>
+
+
+  <div class="callout">
+
+    <b>Baseline scale:</b>
+    30,000 rows, median score 0.2075, maximum score 0.9909,
+    and a top-10 declining rate of 0.70.
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     LIMITATIONS
+========================= -->
+
+<section id="limits">
+
+  <div class="sec-num">
+    06 — Limitations
+  </div>
+
+  <h2>
+    What this can't claim
+  </h2>
+
+  <p>
+    The clustering is cross-sectional and descriptive. No page was actually
+    refreshed and re-measured, so the results do not show that following a
+    recommendation will improve traffic.
+  </p>
+
+  <p>
+    This is not a prediction of Google's ranking algorithm and not semantic
+    clustering. No page text was used; the archetypes are based only on five
+    observed metrics.
+  </p>
+
+  <p>
+    The 14.6%–61.9% decline-rate range comes from only seven held-out
+    clients and should not be generalized to the full client population
+    without further validation.
+  </p>
+
+  <p>
+    The main pipeline uses 30,000 pages from a broader 519,606-content-item
+    catalog. Cluster shapes have not been re-validated at the full catalog
+    scale.
+  </p>
+
+  <p>
+    The baseline was not re-tested under the same client-held-out evaluation.
+    The honest held-out validation specifically applies to KMeans.
+  </p>
+
+  <p>
+    Finally, the playbook thresholds are simple, un-tuned cutoffs. They are
+    a starting queue design, not a validated production decision policy.
+  </p>
+
+</section>
+
+
+<!-- =========================
+     REPRODUCIBILITY
+========================= -->
+
+<section id="repro">
+
+  <div class="sec-num">
+    07 — Reproducibility
+  </div>
+
+  <h2>
+    Reproduce it
+  </h2>
+
+  <p>
+    Everything above can be re-run from the repository with random seed
+    <code>42</code>.
+  </p>
+
+
+  <pre>pip install -r requirements.txt</pre>
+
+
+  <h3>
+    Core notebooks
+  </h3>
+
+  <p>
+
+    <a
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb"
+      target="_blank"
+    >
+      capstone.ipynb
+    </a>
+    — full capstone pipeline
+
+  </p>
+
+  <p>
+
+    <a
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w05_model.ipynb"
+      target="_blank"
+    >
+      w05_model.ipynb
+    </a>
+    — KMeans model and cluster interpretation
+
+  </p>
+
+  <p>
+
+    <a
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w06_validation_audit.ipynb"
+      target="_blank"
+    >
+      w06_validation_audit.ipynb
+    </a>
+    — client-grouped validation and leakage audit
+
+  </p>
+
+  <p>
+
+    <a
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb"
+      target="_blank"
+    >
+      w07_action_playbook.ipynb
+    </a>
+    — ranked action playbook
+
+  </p>
+
+
+  <div class="btn-row">
+
+    <a
+      class="btn solid"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship"
+      target="_blank"
+    >
+      Open repository ↗
+    </a>
+
+    <a
+      class="btn"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md"
+      target="_blank"
+    >
+      Full report ↗
+    </a>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     ACKNOWLEDGMENTS
+========================= -->
+
+<section id="acknowledgments" class="acknowledgments">
+
+  <div class="sec-num">
+    08 — Acknowledgments
+  </div>
+
+  <h2>
+    Data credit
+  </h2>
+
+  <p>
+    Built on the <b>FlyRank ML Internship dataset</b> — real,
+    pseudonymized production search and analytics data provided for
+    the internship track.
+  </p>
+
+  <p>
+    This report uses observed, measured, directional, and decision-support
+    language throughout. It does not claim causal impact or prediction of
+    Google's ranking algorithm.
+  </p>
+
+</section>
+
+</main>
 
 <footer>
-  <div class="wrap">
-    <h2>Acknowledgments &amp; Data Credit</h2>
-    <div class="credit-box">
-      <p style="margin:0; color:#E4EAED;">Built on the <strong>FlyRank ML Internship dataset</strong> — real, pseudonymized production search and analytics data provided for this internship track.</p>
-      <p style="margin:8px 0 0;"><a href="https://flyrank.ai" target="_blank" rel="noopener">flyrank.ai ↗</a></p>
-    </div>
-    <p class="footer-meta">Research paper · FlyRank ML Internship, Applied Search Intelligence track · Decision-support findings only — observed, measured, directional language throughout.</p>
-  </div>
-</footer>
 
-</body>
+  Research paper · FlyRank ML Internship · Applied Search Intelligence track
+  · Decision-support findings only
+
+  <br><br> 
+
+  <a href="https://flyrank.ai" target="_blank" > 
+    flyrank.ai ↗ 
+  </a> 
+    
+  .
+    
+  <a href="yumna-09/FlyRank-ML-Internship" target="_blank" > 
+    Yumna Kashif ↗ 
+  </a>
+
+</footer> 
+ 
+</body> 
 </html>
