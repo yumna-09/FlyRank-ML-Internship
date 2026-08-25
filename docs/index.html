@@ -18,23 +18,19 @@
   --rule:#D9D4C9;
   --rule-strong:#B9B2A2;
 
-  /* PRIMARY BRAND COLORS */
   --navy:#2F4156;
   --teal:#567C8D;
 
-  /* SUPPORTING NEUTRALS */
   --teal-soft:#E3EBEE;
   --navy-soft:#E4E9ED;
   --paper-dark:#EDE8DC;
   --white:#FFFFFF;
 
-  /* ACTION COLORS — NO ORANGE / RED */
   --refresh:#2F4156;
   --boost:#567C8D;
   --prune:#405A68;
   --monitor:#C9C2AF;
 
-  /* TIER COLORS */
   --tier-top3:#2F4156;
   --tier-page1:#567C8D;
   --tier-striking:#6F8F9D;
@@ -172,7 +168,7 @@ h1{
   margin:0 0 22px;
 
   letter-spacing:-0.01em;
-  max-width:15ch;
+  max-width:20ch;
 }
 
 .abstract{
@@ -498,6 +494,63 @@ p{
 
 .results-table .note{
   font-size:12px;
+  color:var(--ink-soft);
+}
+
+
+/* =========================
+   CLUSTER SUMMARY TABLE
+========================= */
+
+.cluster-summary{
+  margin:28px 0 34px;
+  border:1px solid var(--rule-strong);
+  background:var(--white);
+  overflow-x:auto;
+}
+
+.cluster-summary table{
+  width:100%;
+  min-width:650px;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+.cluster-summary th{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  color:var(--ink-soft);
+  text-align:left;
+  padding:10px 12px;
+  border-bottom:2px solid var(--navy);
+  white-space:nowrap;
+}
+
+.cluster-summary td{
+  padding:11px 12px;
+  border-bottom:1px solid var(--rule);
+  vertical-align:top;
+}
+
+.cluster-summary tr:last-child td{
+  border-bottom:none;
+}
+
+.cluster-summary .cluster-id{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600;
+  color:var(--navy);
+}
+
+.cluster-summary .metric{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.cluster-summary .trait{
   color:var(--ink-soft);
 }
 
@@ -840,12 +893,11 @@ pre{
 
 /* =========================
    ACKNOWLEDGMENTS
-   LIGHTER END SECTION
 ========================= */
 
 .acknowledgments{
   padding-top:42px;
-  padding-bottom:42px;
+  padding-bottom:28px;
   border-bottom:none;
 }
 
@@ -864,7 +916,7 @@ pre{
 ========================= */
 
 footer{
-  padding:40px 6vw 60px;
+  padding:20px 6vw 28px;
 
   text-align:center;
 
@@ -888,6 +940,7 @@ footer a{
 
   h1{
     font-size:32px;
+    max-width:20ch;
   }
 
   .masthead{
@@ -963,6 +1016,11 @@ footer a{
 
   .archetype:last-child{
     border-bottom:none;
+  }
+
+  .cluster-summary{
+    margin-left:0;
+    margin-right:0;
   }
 
 }
@@ -1076,7 +1134,7 @@ footer a{
         </div>
 
         <div class="serp-reason">
-          top visibility + declining >20% + CTR below position expectation
+          top visibility + declining &gt;20% + CTR below position expectation
         </div>
 
       </div>
@@ -1165,6 +1223,7 @@ footer a{
       class="btn solid"
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md"
       target="_blank"
+      rel="noopener"
     >
       Read the full report ↗
     </a>
@@ -1173,14 +1232,25 @@ footer a{
       class="btn"
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb"
       target="_blank"
+      rel="noopener"
     >
       View the notebook ↗
     </a>
 
     <a
       class="btn"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/releases/download/v1.0/ranked_action_queue.csv"
+      target="_blank"
+      rel="noopener"
+    >
+      Download ranked action queue ↓
+    </a>
+
+    <a
+      class="btn"
       href="https://github.com/yumna-09/FlyRank-ML-Internship"
       target="_blank"
+      rel="noopener"
     >
       Repository ↗
     </a>
@@ -1507,129 +1577,216 @@ footer a{
 
   </div>
 
-<div class="archetypes">
 
-  <!-- CLUSTER 6 -->
-  <div class="archetype">
+  <!-- CLUSTER PROFILE SUMMARY -->
 
-    <div class="archetype-name">
-      High-traffic performers
-    </div>
+  <h3>
+    Cluster profile at a glance
+  </h3>
 
-    <p>
-      Cluster 6 is a small group of very high-visibility pages,
-      averaging approximately 112k impressions over 90 days, with
-      typical CTR and strong average position.
-    </p>
+  <div class="cluster-summary">
 
-  </div>
+    <table>
 
+      <thead>
 
-  <!-- CLUSTER 0 -->
-  <div class="archetype">
+        <tr>
+          <th>Cluster</th>
+          <th>Avg impressions</th>
+          <th>Avg position</th>
+          <th>Main trait</th>
+        </tr>
 
-    <div class="archetype-name">
-      Established / older content
-    </div>
+      </thead>
 
-    <p>
-      Cluster 0 contains established pages averaging approximately
-      383 days old, with around 3.9k impressions, 0.42 CTR, and
-      an average position of 11.2.
-    </p>
+      <tbody>
 
-  </div>
+        <tr>
+          <td class="cluster-id">C6</td>
+          <td class="metric">~112k</td>
+          <td class="metric">Strong</td>
+          <td class="trait">High-traffic performers</td>
+        </tr>
 
+        <tr>
+          <td class="cluster-id">C0</td>
+          <td class="metric">~3.9k</td>
+          <td class="metric">11.2</td>
+          <td class="trait">Established / older content</td>
+        </tr>
 
-  <!-- CLUSTER 1 -->
-  <div class="archetype">
+        <tr>
+          <td class="cluster-id">C1</td>
+          <td class="metric">~4.0k</td>
+          <td class="metric">11.6</td>
+          <td class="trait">Newer / steady content</td>
+        </tr>
 
-    <div class="archetype-name">
-      Newer / steady content
-    </div>
+        <tr>
+          <td class="cluster-id">C4</td>
+          <td class="metric">~2.8k</td>
+          <td class="metric">46.2</td>
+          <td class="trait">Low-CTR / weak ranking</td>
+        </tr>
 
-    <p>
-      Cluster 1 is the largest group of relatively newer pages,
-      averaging approximately 150 days old, with around 4.0k
-      impressions, 0.29 CTR, and an average position of 11.6.
-    </p>
+        <tr>
+          <td class="cluster-id">C3</td>
+          <td class="metric">~4</td>
+          <td class="metric">6.2</td>
+          <td class="trait">Low-volume / high-CTR</td>
+        </tr>
 
-  </div>
+        <tr>
+          <td class="cluster-id">C2</td>
+          <td class="metric">~403</td>
+          <td class="metric">18.2</td>
+          <td class="trait">High-engagement pages</td>
+        </tr>
 
+        <tr>
+          <td class="cluster-id">C5</td>
+          <td class="metric">Intermediate</td>
+          <td class="metric">Intermediate</td>
+          <td class="trait">Borderline-fit content</td>
+        </tr>
 
-  <!-- CLUSTER 4 -->
-  <div class="archetype">
+      </tbody>
 
-    <div class="archetype-name">
-      Low-CTR / weak ranking
-    </div>
-
-    <p>
-      Cluster 4 contains pages with weak click-through behavior and
-      poor rankings, averaging approximately 0.10 CTR and position
-      46.2, with around 2.8k impressions.
-    </p>
-
-  </div>
-
-
-  <!-- CLUSTER 3 -->
-  <div class="archetype">
-
-    <div class="archetype-name">
-      Low-volume / high-CTR
-    </div>
-
-    <p>
-      Cluster 3 is a very small group averaging only about 4
-      impressions but an unusually high 41.35 CTR and a strong
-      average position of 6.2.
-    </p>
+    </table>
 
   </div>
 
 
-  <!-- CLUSTER 2 -->
-  <div class="archetype">
+  <div class="archetypes">
 
-    <div class="archetype-name">
-      High-engagement pages
+    <!-- CLUSTER 6 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        High-traffic performers
+      </div>
+
+      <p>
+        Cluster 6 is a small group of very high-visibility pages,
+        averaging approximately 112k impressions over 90 days, with
+        typical CTR and strong average position.
+      </p>
+
     </div>
 
-    <p>
-      Cluster 2 is a small unusual group with approximately 97.34
-      average engagement, despite relatively low traffic of around
-      403 impressions and an average position of 18.2.
-    </p>
+
+    <!-- CLUSTER 0 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        Established / older content
+      </div>
+
+      <p>
+        Cluster 0 contains established pages averaging approximately
+        383 days old, with around 3.9k impressions, 0.42 CTR, and
+        an average position of 11.2.
+      </p>
+
+    </div>
+
+
+    <!-- CLUSTER 1 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        Newer / steady content
+      </div>
+
+      <p>
+        Cluster 1 is the largest group of relatively newer pages,
+        averaging approximately 150 days old, with around 4.0k
+        impressions, 0.29 CTR, and an average position of 11.6.
+      </p>
+
+    </div>
+
+
+    <!-- CLUSTER 4 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        Low-CTR / weak ranking
+      </div>
+
+      <p>
+        Cluster 4 contains pages with weak click-through behavior and
+        poor rankings, averaging approximately 0.10 CTR and position
+        46.2, with around 2.8k impressions.
+      </p>
+
+    </div>
+
+
+    <!-- CLUSTER 3 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        Low-volume / high-CTR
+      </div>
+
+      <p>
+        Cluster 3 is a very small group averaging only about 4
+        impressions but an unusually high 41.35 CTR and a strong
+        average position of 6.2.
+      </p>
+
+    </div>
+
+
+    <!-- CLUSTER 2 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        High-engagement pages
+      </div>
+
+      <p>
+        Cluster 2 is a small unusual group with approximately 97.34
+        average engagement, despite relatively low traffic of around
+        403 impressions and an average position of 18.2.
+      </p>
+
+    </div>
+
+
+    <!-- CLUSTER 5 -->
+
+    <div class="archetype">
+
+      <div class="archetype-name">
+        Borderline-fit content
+      </div>
+
+      <p>
+        Cluster 5 contains pages with intermediate engagement behavior
+        and weaker cluster separation. Most of the negative-silhouette
+        points were concentrated here, showing where KMeans has the
+        most difficulty assigning a clear archetype.
+      </p>
+
+    </div>
 
   </div>
 
-
-  <!-- CLUSTER 5 -->
-  <div class="archetype">
-
-    <div class="archetype-name">
-      Borderline-fit content
-    </div>
-
-    <p>
-      Cluster 5 contains pages with intermediate engagement behavior
-      and weaker cluster separation. Most of the negative-silhouette
-      points were concentrated here, showing where KMeans has the
-      most difficulty assigning a clear archetype.
-    </p>
-
-  </div>
-
-</div>
 
   <p>
-  
-   The seven clusters were profiled descriptively across all 30,000
-   pages. Their profiles are based on measured differences in traffic,
-   CTR, ranking position, engagement, and content age. The clusters
-   are behavioral groupings rather than semantic categories, and no
-   page text was used.
+    The seven clusters were profiled descriptively across all 30,000
+    pages. Their profiles are based on measured differences in traffic,
+    CTR, ranking position, engagement, and content age. The clusters
+    are behavioral groupings rather than semantic categories, and no
+    page text was used.
   </p>
 
 </section>
@@ -2149,8 +2306,8 @@ footer a{
     Eligible pages satisfy:
   </p>
 
-  <pre>impressions_90d >= 500
-AND avg_position > 0
+  <pre>impressions_90d &gt;= 500
+AND avg_position &gt; 0
 AND position_tier != 'no_data'</pre>
 
 
@@ -2327,6 +2484,7 @@ AND position_tier != 'no_data'</pre>
     <a
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb"
       target="_blank"
+      rel="noopener"
     >
       capstone.ipynb
     </a>
@@ -2339,6 +2497,7 @@ AND position_tier != 'no_data'</pre>
     <a
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w05_model.ipynb"
       target="_blank"
+      rel="noopener"
     >
       w05_model.ipynb
     </a>
@@ -2351,6 +2510,7 @@ AND position_tier != 'no_data'</pre>
     <a
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w06_validation_audit.ipynb"
       target="_blank"
+      rel="noopener"
     >
       w06_validation_audit.ipynb
     </a>
@@ -2363,6 +2523,7 @@ AND position_tier != 'no_data'</pre>
     <a
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb"
       target="_blank"
+      rel="noopener"
     >
       w07_action_playbook.ipynb
     </a>
@@ -2377,6 +2538,7 @@ AND position_tier != 'no_data'</pre>
       class="btn solid"
       href="https://github.com/yumna-09/FlyRank-ML-Internship"
       target="_blank"
+      rel="noopener"
     >
       Open repository ↗
     </a>
@@ -2385,8 +2547,18 @@ AND position_tier != 'no_data'</pre>
       class="btn"
       href="https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md"
       target="_blank"
+      rel="noopener"
     >
       Full report ↗
+    </a>
+
+    <a
+      class="btn"
+      href="https://github.com/yumna-09/FlyRank-ML-Internship/releases/download/v1.0/ranked_action_queue.csv"
+      target="_blank"
+      rel="noopener"
+    >
+      Download CSV ↓
     </a>
 
   </div>
@@ -2424,24 +2596,34 @@ AND position_tier != 'no_data'</pre>
 
 </main>
 
+
 <footer>
 
   Research paper · FlyRank ML Internship · Applied Search Intelligence track
   · Decision-support findings only
 
-  <br><br> 
+  <br><br>
 
-  <a href="https://flyrank.ai" target="_blank" > 
-    flyrank.ai ↗ 
-  </a> 
-    
-  .
-    
-  <a href="https://github.com/yumna-09/FlyRank-ML-Internship" target="_blank" > 
-    Yumna Kashif ↗ 
+  <a
+    href="https://flyrank.ai"
+    target="_blank"
+    rel="noopener"
+  >
+    flyrank.ai ↗
   </a>
 
-</footer> 
- 
-</body> 
+  ·
+
+  <a
+    href="https://github.com/yumna-09/FlyRank-ML-Internship"
+    target="_blank"
+    rel="noopener"
+  >
+    Yumna Kashif ↗
+  </a>
+
+</footer>
+
+
+</body>
 </html>
