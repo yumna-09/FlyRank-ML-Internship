@@ -1,361 +1,396 @@
 # Capstone Report — Content Archetype Clustering & Priority Queue
 
-* **Author:** Yumna Kashif
-* **Lane:** Structured Content Archetype Clustering
-* **Repo:** https://github.com/yumna-09/FlyRank-ML-Internship
-* **Date:** 2026-08-25
-
-## 0. Abstract
-
-Which content pages should a reviewer check first when a site has far more pages than a team can review by hand?
-
-Using FlyRank's anonymized 30,000-page starter sample, I built a transparent rule-based baseline and used KMeans clustering to group pages by observed search behavior across five signals: impressions, click-through rate, average ranking position, engagement rate, and content age.
-
-The first clustering evaluation was leaky because centroids were fit and scored on the same data, producing a silhouette score of 0.3763. To test whether the archetypes generalized beyond the clients used for fitting, I held out entire clients rather than random rows. The honest client-held-out silhouette score was 0.3046, compared with 0.0013 for the rule-based baseline's buckets.
-
-The resulting behavioral archetypes were translated into a four-action review queue: `refresh`, `boost`, `prune`, and `monitor`. Every recommendation is decision support for human review, not an automated instruction or causal claim about traffic outcomes.
+**Author:** Yumna Kashif  
+**Lane:** Structured Content Archetype Clustering  
+**Repository:** [FlyRank-ML-Internship](https://github.com/yumna-09/FlyRank-ML-Internship)  
+**Date:** August 25, 2026
 
 ---
 
-## 1. Problem framing
+## Abstract
 
-**Decision supported:** which pages a content strategist or reviewer should open first when the backlog is too large to inspect page-by-page.
+When a website contains far more pages than a content team can manually review, determining which pages deserve attention first becomes a practical prioritization problem.
 
-**Unit of analysis:** one content page (`content_id`), represented by observed metrics aggregated over a trailing 90-day window.
+Using FlyRank’s anonymized 30,000-page starter dataset, this project develops a content-review prioritization framework based on behavioral archetype discovery. A transparent rule-based baseline was first created using observable search-performance signals. KMeans clustering was then applied to group pages according to five standardized metrics:
 
-**Output:** behavioral cluster membership and a priority action: `refresh`, `boost`, `prune`, or `monitor`, with supporting reason codes and human-review flags.
+- Impressions
+- Click-through Rate (CTR)
+- Average Ranking Position
+- Engagement Rate
+- Content Age
 
-**Action a human takes:** review the highest-priority pages first, inspect the live page and its observed signals, then decide whether the recommended action is appropriate.
+The initial clustering evaluation produced a silhouette score of **0.3763**, but this result contained evaluation leakage because centroids were fitted and scored on the same data. Validation was redesigned using a **client-held-out approach**, where entire clients were excluded during model fitting.
 
-**Cost of a wrong call:** a page incorrectly treated as healthy may continue losing visibility unnoticed, while a page incorrectly prioritized consumes editorial review time.
+### Evaluation Results
 
-Why clustering helps here: hand-written rules can identify individual signals, such as pages with unusually low CTR for their ranking position. However, real pages can have combinations of behavior — for example, high impressions with weak CTR, low impressions with strong engagement, or aging content with stable rankings.
+| Method | Silhouette Score |
+|----------|----------|
+| Rule-Based Baseline | 0.0013 |
+| KMeans (All Data Fit + Score) | 0.3763 |
+| KMeans (Client Held-Out) | **0.3046** |
 
-Instead of evaluating one threshold at a time, this project asks whether **grouping pages by several observed signals simultaneously** can provide a clearer starting point for human review.
+The resulting behavioral clusters were translated into a practical review queue consisting of four actions:
 
-This is not a system for predicting Google's ranking algorithm or automatically changing pages. It is a behavioral grouping and prioritization system.
+- **Refresh**
+- **Boost**
+- **Prune**
+- **Monitor**
 
----
-
-## 2. Data & safety
-
-**Source:** FlyRank ML Internship warehouse release, build id `flyrank_pseudonymized_warehouse_release_v20260703`, exported 2026-07-03 from FlyRank's pseudonymized production search-and-analytics warehouse.
-
-The broader production catalog contains:
-
-* **78.8M** rows in the daily performance fact table
-* **519,606** distinct content items
-* **104** clients
-
-The main clustering and playbook pipeline uses the bundled anonymized starter sample:
-
-* **30,000 rows**
-* one row per content item
-* metrics pre-aggregated over a trailing 90-day window
-
-A separate data-contract exercise used a March 2026 warehouse slice containing:
-
-* **9,841,378 rows**
-* **331,437** content items
-* **55** clients
-
-That exercise was used to verify data grain and test a feature-leakage trap. It was not the main modeling pipeline.
-
-### Features used for clustering
-
-The KMeans model uses five observed metrics:
-
-* `impressions_90d`
-* click-through rate
-* average ranking position
-* engagement rate
-* content age
-
-All features were standardized before clustering so that larger numerical scales did not dominate the distance calculations.
-
-### Deliberately excluded
-
-* GA4 columns where availability was not confirmed
-* FlyRank product decision flags such as health score, priority score, or action type
-* `trend_direction`
-* `trend_pct`
-* `content_id`
-* `client_id`
-
-`content_id` and `client_id` are used only as identifiers and grouping keys, never as clustering features.
-
-`trend_direction` and `trend_pct` are excluded from the clustering feature set because they relate to the decline label and are used only afterward for descriptive analysis and action logic.
-
-No client names, domains, URLs, page titles, or raw search queries appear in the analysis.
+All recommendations are intended as **decision support for human reviewers**, not automated instructions or causal claims regarding traffic outcomes.
 
 ---
 
-## 3. Baseline
+## 1. Problem Framing
 
-Before fitting KMeans, I built a transparent rule-based baseline with no learned weights.
+### Decision Supported
 
-Two candidate relationships were checked against the data before being included in the baseline logic.
+Which pages should a content strategist review first when the backlog is too large to inspect manually?
 
-### Signal check 1 — Staleness vs. decline
+### Unit of Analysis
 
-**Verdict: MIXED**
+One content page (`content_id`) represented by observed metrics aggregated across a trailing 90-day window.
 
-The decline rate rose from approximately **51.1%** in the youngest freshness bucket to **61.1%** across later freshness buckets, but reversed in the oldest bucket:
+### Output
 
-* 0–30 days: 0.511, `n=20,480`
-* 91–180 days: 0.611, `n=9,171`
-* 181+ days: 0.471, `n=174`
+Each page receives:
 
-The oldest bucket fell below the dataset average decline rate of approximately 0.542.
+- Behavioral cluster assignment
+- Recommended action
+- Supporting reason codes
+- Human-review flags
 
-Because the relationship did not remain consistent across the observed range, staleness was excluded from the baseline score.
+### Human Workflow
 
-### Signal check 2 — CTR vs. ranking position
+1. Review highest-priority pages first.
+2. Inspect live content and performance signals.
+3. Decide whether the recommended action is appropriate.
 
-**Verdict: CONFIRMED**
+### Why Clustering?
 
-Median CTR generally declines as ranking position becomes weaker:
+Rule-based systems can identify isolated issues such as low CTR or weak rankings.
 
-* `top_3`: 0.20
-* `page_1`: 0.24
-* `striking`: 0.17
-* `page_3_5`: 0.09
-* `deep`: 0.00
+However, content pages often exhibit combinations of behaviors:
 
-This check was limited to visible pages with:
+- High impressions with weak CTR
+- Low impressions with strong engagement
+- Aging content with stable rankings
+
+Rather than evaluating one threshold at a time, clustering groups pages according to multiple observed signals simultaneously.
+
+> This project does not attempt to predict Google's ranking algorithm. It is a behavioral grouping and prioritization system.
+
+---
+
+## 2. Data & Safety
+
+### Source
+
+FlyRank ML Internship warehouse release:
+
+```text
+flyrank_pseudonymized_warehouse_release_v20260703
+```
+
+### Full Production Catalog
+
+| Metric | Value |
+|----------|----------|
+| Daily Performance Rows | 78.8M |
+| Distinct Content Items | 519,606 |
+| Clients | 104 |
+
+### Starter Dataset Used
+
+| Metric | Value |
+|----------|----------|
+| Rows | 30,000 |
+| Aggregation Window | 90 Days |
+
+### Features Used for Clustering
+
+- `impressions_90d`
+- CTR
+- Average Ranking Position
+- Engagement Rate
+- Content Age
+
+All features were standardized before clustering.
+
+### Deliberately Excluded
+
+- `trend_direction`
+- `trend_pct`
+- `content_id`
+- `client_id`
+- FlyRank health scores
+- FlyRank priority scores
+- Product action flags
+
+No client names, domains, URLs, page titles, or search queries were used.
+
+---
+
+## 3. Rule-Based Baseline
+
+Before fitting KMeans, a transparent rule-based baseline was created.
+
+### Signal Check 1 — Staleness vs. Decline
+
+**Verdict:** Mixed
+
+| Age Bucket | Decline Rate |
+|------------|-------------|
+| 0–30 Days | 51.1% |
+| 91–180 Days | 61.1% |
+| 181+ Days | 47.1% |
+
+Because the relationship was inconsistent, staleness was excluded from the baseline score.
+
+### Signal Check 2 — CTR vs. Ranking Position
+
+**Verdict:** Confirmed
+
+| Position Tier | Median CTR |
+|---------------|-----------|
+| Top 3 | 0.20 |
+| Page 1 | 0.24 |
+| Striking Distance | 0.17 |
+| Page 3–5 | 0.09 |
+| Deep | 0.00 |
+
+### Baseline Formula
+
+```text
+eligible * visibility_score * ctr_gap_norm
+```
+
+### Eligibility
 
 ```text
 impressions_90d >= 500
-
-The observed relationship supported using a position-adjusted CTR gap as the core signal in the baseline.
-
-Baseline rule
-
-Reason code:
-
-ctr_below_position_expected
-
-Score formula:
-
-eligible * visibility_score * ctr_gap_norm
-
-Eligibility:
-
-impressions_90d >= 500
 AND avg_position > 0
 AND position_tier != 'no_data'
-Baseline action thresholds
-Action	Score condition
-prioritize_ctr_review	>= 0.6
-review_ctr	> 0 and < 0.6
-monitor	== 0
-Baseline queue statistics
-Action	Pages
-monitor	13,274
-review_ctr	12,814
-prioritize_ctr_review	3,912
+```
 
-Additional baseline statistics:
+### Queue Statistics
 
-Rows: 30,000
-Median score: 0.2075
-Maximum score: 0.9909
-Top-10 declining rate: 0.70
+| Action | Pages |
+|----------|----------|
+| Monitor | 13,274 |
+| Review CTR | 12,814 |
+| Prioritize CTR Review | 3,912 |
 
-The baseline score uses only:
+---
 
-impressions_90d
-avg_position
-position_tier
-ctr
+## 4. Model & Analysis
 
-The decline-label source is not used as a score input, and FlyRank product flags are not present as model features.
+### Method
 
-4. Model / analysis
+**KMeans Clustering**
 
-Method: KMeans clustering.
+### Features
 
-This project uses an unsupervised approach because the primary goal is not to predict a target variable. The goal is to identify groups of pages that exhibit similar observed search behavior.
+- Impressions
+- CTR
+- Average Ranking Position
+- Engagement Rate
+- Content Age
 
-Feature set
+### Choosing K
 
-Five standardized observed features:
+Search performed across:
 
-impressions
-click-through rate
-average ranking position
-engagement rate
-content age
-Choosing the number of clusters
-
-KMeans was evaluated across:
-
+```text
 k = 2 through k = 7
+```
 
-The silhouette search selected:
+Selected value:
 
+```text
 k = 7
+```
 
-The same cluster count also won when the search was repeated using only training-client data.
+### Why KMeans?
 
-Why KMeans
+KMeans produces cluster memberships that can be translated into understandable behavioral archetypes for non-technical reviewers.
 
-KMeans was chosen because its output — cluster membership — can be translated into understandable behavioral archetypes for a non-technical reviewer.
+Clusters are based solely on observed performance signals and not page content.
 
-The clusters are not semantic categories and do not use page text. They represent similarity across the five observed performance and age signals.
+---
 
-5. Evaluation & validation
-Baseline vs. KMeans
+## 5. Evaluation & Validation
 
-The rule-based baseline and KMeans were compared in the same feature space using silhouette score as a measure of how naturally separated the resulting groups are.
+### Baseline vs KMeans
 
-Method	Silhouette score	Reading
-Baseline: rule-based buckets	0.0013	Essentially no natural separation
-KMeans (k=7), all-data fit + score	0.3763	Strong, but inflated by evaluation leakage
-KMeans (k=7), honest client-held-out	0.3046	Trustworthy evaluation
-Client-held-out validation
+| Method | Silhouette Score | Interpretation |
+|----------|----------|----------|
+| Baseline | 0.0013 | No meaningful separation |
+| KMeans (same data fit & score) | 0.3763 | Inflated by leakage |
+| KMeans (client-held-out) | **0.3046** | Trustworthy evaluation |
 
-The first clustering evaluation fit the centroids and scored the same 30,000 rows. That does not test whether the discovered structure generalizes to unseen clients.
+### Client-Held-Out Validation
 
-The validation was redesigned by grouping on client_id:
+Validation was redesigned to hold out entire clients:
 
-approximately 80% of clients used for fitting
-approximately 20% of clients held out
-centroids fit only on training-client rows
-held-out clients scored without being used to fit the centroids
+- ~80% clients used for fitting
+- ~20% clients held out
+- Centroids fitted only on training clients
 
-The held-out evaluation used:
+Held-out evaluation:
 
-7 held-out clients
-7,611 pages
+| Metric | Value |
+|----------|----------|
+| Held-Out Clients | 7 |
+| Held-Out Pages | 7,611 |
 
-The silhouette score dropped from 0.3763 to 0.3046.
+Silhouette score:
 
-The drop is expected when clusters are evaluated on clients the model did not see during fitting. The held-out score is therefore treated as the trustworthy evaluation rather than the higher all-data score.
+```text
+0.3763 → 0.3046
+```
 
-Leakage checks
+### Leakage Checks
 
-Three checks were performed:
+1. K-selection leakage audit
+2. Feature leakage audit
+3. Synthetic leakage trap validation
 
-k-selection leakage: the search for the best value of k was repeated using only training-client data. k=7 remained the selected value.
-Feature leakage: identifiers and decline-label source columns were excluded from the clustering feature list.
-Separate leakage trap: a data-contract exercise showed that constructing a feature from the same time window as a toy label could inflate accuracy from 0.591 to 1.000. That pattern was excluded from this project's clustering features.
-6. Cluster interpretation
+A separate exercise demonstrated how leakage can inflate performance:
 
-The seven clusters were profiled descriptively across all 30,000 pages.
+```text
+0.591 → 1.000
+```
 
-The resulting archetypes include:
+Such features were excluded.
 
-a small cluster of very high-traffic top performers, averaging approximately 112k impressions per 90 days
-two larger groups of steady, older content that differ primarily by age
-a low-CTR, poorly ranked cluster with an average ranking position of approximately 46
-a near-zero-impression, high-CTR group that may reflect low-volume or highly targeted queries
-an unusually high-engagement group
-a borderline group with weaker cluster fit
+---
 
-Approximately 2.6% of points were poorly matched to their assigned cluster. These observations were concentrated in a borderline-engagement group positioned between clearer behavioral archetypes.
+## 6. Cluster Interpretation
 
-Decline rate by cluster
+Seven behavioral archetypes emerged.
 
-Decline rate was measured descriptively after clustering and was not used as a clustering feature.
+Examples include:
 
-Across the held-out clients, observed decline rates ranged from:
+- High-traffic top performers (~112K impressions)
+- Stable older content
+- Low-CTR poorly ranked pages
+- High-engagement content
+- Near-zero-impression but high-CTR pages
 
-14.6% to 61.9%
+Approximately **2.6%** of pages were weakly matched to their assigned cluster.
 
-Because this range was measured on only seven held-out clients, it is treated as descriptive evidence rather than proof that the same pattern generalizes to the full client population.
+### Decline Rate by Cluster
 
-7. Recommendation
+Observed decline rates ranged from:
 
-The clustering and observed performance signals are translated into a four-action priority queue.
+```text
+14.6% – 61.9%
+```
 
-Every page receives one of the following actions:
+This analysis is descriptive and based on seven held-out clients.
 
-Priority	Action	Trigger	Pages
-1	REFRESH	ranks top_3 / page_1, declining >20% MoM, CTR well below tier	1,447
-2	BOOST	position 11–20 ("striking distance"), CTR below expectation	4,348
-3	PRUNE	deep/unranked, declining, bottom-quartile visibility	405
-4	MONITOR	no strong signal either way	23,800
-Human review requirement
+---
 
-The action playbook flags 7,012 of 30,000 pages (23.4%) for mandatory human sign-off.
+## 7. Recommendation System
 
-This includes:
+### Priority Queue
 
-every PRUNE candidate
-top-10%-visibility pages
-pages in an uncertain score band
-pages with weak cluster fit
+| Priority | Action | Trigger | Pages |
+|----------|----------|----------|----------|
+| 1 | REFRESH | Strong rankings, declining visibility, weak CTR | 1,447 |
+| 2 | BOOST | Positions 11–20 with CTR opportunity | 4,348 |
+| 3 | PRUNE | Deep rankings, declining visibility | 405 |
+| 4 | MONITOR | No strong intervention signal | 23,800 |
 
-The human-review flag is a safeguard, not a model prediction. These pages require manual inspection before any action is taken.
+### Human Review Requirement
 
-What should never be automated
+Mandatory review applies to:
 
-The system must not automatically perform:
+- All PRUNE candidates
+- Top 10% visibility pages
+- Uncertain-score pages
+- Weak-cluster-fit pages
 
-URL deletion
-URL redirection without human verification
-changes to core brand or legal pages
-site-navigation changes
-URL-structure changes based solely on the model or playbook output
+Total flagged pages:
 
-The action queue is a prioritization tool. A recommendation means that the page is worth human inspection; it does not mean that the action is automatically correct.
+**7,012 (23.4%)**
 
-8. Limitations & honest framing
+### Never Automate
 
-Cross-sectional, not causal. No page was actually refreshed and re-measured. The results do not show that following a recommendation will improve traffic.
+- URL deletion
+- URL redirects
+- Brand-page modifications
+- Legal-page modifications
+- Navigation changes
+- URL-structure changes
 
-Not "predicting Google." The clusters describe similarity across five observed metrics. They do not model Google's ranking algorithm.
+---
 
-Not semantic clustering. No page text or semantic content representation was used.
+## 8. Limitations
 
-Small held-out sample for decline-rate analysis. The observed 14.6%–61.9% range comes from seven held-out clients and should not be generalized without further validation.
+- Cross-sectional, not causal
+- Does not predict Google's ranking algorithm
+- Not semantic clustering
+- Small held-out sample for decline analysis
+- Uses starter sample (30,000 pages)
+- Baseline not re-tested under held-out validation
+- Single snapshot rather than longitudinal data
+- Playbook thresholds remain heuristic
 
-Starter sample, not the full catalog. The main clustering pipeline uses 30,000 pages out of the broader 519,606-content-item catalog.
+---
 
-Baseline was not re-tested under the same held-out evaluation. The client-held-out validation specifically applies to KMeans.
+## 9. Reproducibility
 
-Single snapshot rather than a long time series. The analysis uses observed windows rather than repeated intervention and outcome measurement.
+### Random Seed
 
-Playbook thresholds are simple, un-tuned cutoffs. They provide an initial queue design and have not yet been validated against real editor decisions or downstream business outcomes.
-
-9. Reproducibility
-
-Everything in the project can be re-run from the repository.
-
-Random seed:
-
+```python
 42
-Relevant notebooks
-work/notebooks/capstone.ipynb — full capstone pipeline
-work/notebooks/w05_model.ipynb — KMeans model and cluster interpretation
-work/notebooks/w06_validation_audit.ipynb — client-grouped validation and leakage audit
-work/notebooks/w07_action_playbook.ipynb — ranked action playbook
-Environment
+```
+
+### Relevant Notebooks
+
+```text
+work/notebooks/capstone.ipynb
+work/notebooks/w05_model.ipynb
+work/notebooks/w06_validation_audit.ipynb
+work/notebooks/w07_action_playbook.ipynb
+```
+
+### Environment
+
+```bash
 pip install -r requirements.txt
+```
 
-Then open the notebooks inside:
+Run notebooks inside:
 
+```text
 work/notebooks/
+```
 
-and run them in sequence.
+### Ranked Action Queue
 
-Ranked action queue
+Release asset:
 
-The generated ranked action queue is available as a release asset:
+```text
+ranked_action_queue.csv
+```
 
-Download ranked action queue
-
-This release asset is provided separately from the repository source tree so the full ranked CSV can be accessed without placing the dataset directly in the repository files.
-
-Repository
+### Repository
 
 https://github.com/yumna-09/FlyRank-ML-Internship
 
-10. Acknowledgments & data credit
+---
 
-Built on the FlyRank ML Internship dataset — real, pseudonymized production search and analytics data provided for the internship track.
 
-https://flyrank.ai
+## 10. Acknowledgments & Data Credit
 
-Claims checklist before submitting: observed / measured / directional / decision-support language throughout · no causal claims without an experiment or causal design · no claim of predicting Google's algorithm · no client-identifying details · KMeans results and action counts match the executed project notebooks.
+Built on the **FlyRank ML Internship dataset** — real, pseudonymized production search and analytics data provided for the internship track.
+
+**FlyRank:** https://flyrank.ai
+
+---
+
+> **Claims checklist before submitting:** observed / measured / directional / decision-support language throughout · no causal claims without an experiment or causal design · no claim of predicting Google's ranking algorithm · no client-identifying details · client-held-out validation used for clustering evaluation · decline rate was measured only after clustering and was not used as a clustering feature · recommendations are intended to support human review and prioritization, not automate content decisions or site changes.
+
+---
