@@ -1,9 +1,9 @@
 # Content Archetype Clustering — FlyRank ML Capstone
 
-**Author:** Yumna Kashif
-**Program:** FlyRank ML Internship
-**Track:** Applied Search Intelligence
-**Capstone Lane:** Structured Content Archetype Clustering
+- **Author:** Yumna Kashif
+- **Program:** FlyRank ML Internship
+- **Track:** Applied Search Intelligence
+- **Capstone Lane:** Structured Content Archetype Clustering
 
 > **30,000 content pages → 7 behavioral archetypes → ranked human-review actions**
 
