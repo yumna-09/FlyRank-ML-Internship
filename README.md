@@ -1,165 +1,467 @@
 # Content Archetype Clustering — FlyRank ML Capstone
 
 **Author:** Yumna Kashif
+**Program:** FlyRank ML Internship
+**Track:** Applied Search Intelligence
+**Capstone Lane:** Structured Content Archetype Clustering
 
-Capstone project for the FlyRank ML Internship. 30,000 content pages grouped into 
-7 behavioral archetypes using KMeans clustering (client-held-out silhouette: 0.3046, 
-vs. 0.0013 rule-based baseline), translated into a human-review action queue.
+> **30,000 content pages → 7 behavioral archetypes → ranked human-review actions**
 
-🔗 **[Live report ↗](https://yumna-09.github.io/FlyRank-ML-Internship/)**  
-📄 **[Full capstone report ↗](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md)**  
-📓 **[Capstone notebook ↗](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
+## 🔗 Project Links
 
----
-
-*Below is the starter repo template this project was built on (setup + assignment instructions).*
-
----
-
-# FlyRank ML Internship — Starter Repo
-
-**Applied Search Intelligence: Google Search Ranking & Discoverability**
-
-This is the starting point for the FlyRank ML Internship. You **clone it into your own public
-repo** (one click — *Use this template*), build everything there, and submit that repo URL on
-each assignment in your portal — it's your workspace, your submission, and your portfolio all
-at once. The rhythm is simple: do the work, commit it, submit on the card. Done.
-
-Everything here runs on a small **anonymized** slice of real FlyRank search data. No credentials,
-no private client data, no setup headaches.
-
-> **New here?** Two reads: **[SETUP.md](SETUP.md)** (GitHub, Colab, and data access — ten
-> minutes, with every silent pitfall flagged), then **[GUIDE.md](GUIDE.md)** (every file
-> explained, what to edit vs. leave alone, and where your own work goes — five minutes).
+* 🌐 **[Live Research Paper](https://yumna-09.github.io/FlyRank-ML-Internship/)**
+* 💻 **[GitHub Repository](https://github.com/yumna-09/FlyRank-ML-Internship)**
+* 📓 **[Capstone Notebook](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
+* 📄 **[Full Capstone Report](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md)**
+* 📥 **[Download Ranked Action Queue](https://github.com/yumna-09/FlyRank-ML-Internship/releases)**
 
 ---
 
-## Quickstart — first win in 2 minutes
+## Overview
 
-The fastest path is Google Colab (one click, zero install). Open Notebook 1 and run all cells:
+When a website contains thousands of pages, manually deciding which pages deserve attention first becomes a prioritization problem.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/notebooks/01_first_look_and_discovery.ipynb?flush_cache=true)
- **Week 1 — Run it, then discover a real truth yourself**
+This capstone analyzes an anonymized dataset of **30,000 content pages** and groups them into behavioral archetypes using **KMeans clustering**. Instead of evaluating individual signals in isolation, the model considers combinations of search-performance and engagement signals to identify pages with similar behavior.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/notebooks/02_your_first_readable_model.ipynb?flush_cache=true)
- **Week 2 — The model is just a rule you can read**
+The resulting clusters are translated into a practical, human-review action queue with four possible recommendations:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/notebooks/03_working_with_the_full_release.ipynb?flush_cache=true)
- **Weeks 3+ — The full release (~79M rows) via DuckDB, no download needed** — hosted at
- [`FlyRank/internship-warehouse`](https://huggingface.co/datasets/FlyRank/internship-warehouse) (gated: request access + accept the data-use terms, approval is instant)
+* **Refresh**
+* **Boost**
+* **Prune**
+* **Monitor**
 
----
-
-## Your assignment notebooks — open, fill, save, done
-
-Every assignment is one pre-named skeleton notebook in `work/notebooks/`. Click its badge,
-fill the sections in order, then **File → Save a copy in GitHub → OK** — the dialog is
-already pre-filled with your repo and the right path.
-
-> **The badges know whose repo they're in.** About 30 seconds after you create your copy, an
-> automatic commit ("Point Colab badges at this copy") rewires every badge in it to open
-> **your** notebooks — with your saved work — instead of the shared read-only ones. Reading
-> this on the shared starter page? The badges below open blank previews; make your copy
-> first ([SETUP.md](SETUP.md), Moment 1).
-
-| Week | Card | Notebook | Open |
-|---|---|---|---|
-| 1 | ML-02 | `w01_research_question` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w01_research_question.ipynb?flush_cache=true) |
-| 2 | ML-03 | `w02_ml_task_framing` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w02_ml_task_framing.ipynb?flush_cache=true) |
-| 3 | ML-04 | `w03_data_contract` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w03_data_contract.ipynb?flush_cache=true) |
-| 3 | ML-05 | `w03_feature_leakage_check` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w03_feature_leakage_check.ipynb?flush_cache=true) |
-| 4 | ML-06 | `w04_signal_audit` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w04_signal_audit.ipynb?flush_cache=true) |
-| 4 | ML-07 | `w04_baseline_score` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w04_baseline_score.ipynb?flush_cache=true) |
-| 5 | ML-08 | `w05_model` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w05_model.ipynb?flush_cache=true) |
-| 6 | ML-09 | `w06_validation_audit` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w06_validation_audit.ipynb?flush_cache=true) |
-| 7 | ML-10 | `w07_action_playbook` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/w07_action_playbook.ipynb?flush_cache=true) |
-| 8 | ML-11 | `capstone` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb?flush_cache=true) |
-
-Badges not opening *your* copy? Colab's built-in opener always works: **File → Open notebook
-→ GitHub tab** → paste `github.com/you/your-repo` → pick the notebook.
-
-### Prefer local?
-
-```bash
-git clone <this-repo-url>
-cd flyrank-ml-internship-starter
-pip install -r requirements.txt          # or: uv pip install -r requirements.txt
-python scripts/run_all.py
-```
-
-That runs the whole pipeline on the bundled sample and writes results to `outputs/`.
+The project is designed as a **decision-support workflow** for content strategists and reviewers. It does **not** attempt to predict Google's ranking algorithm or automatically make content decisions.
 
 ---
 
-## What you get
+## The Problem
 
-| Path | What it is |
-|---|---|
-| `notebooks/` | Week 1–2 **first-win notebooks** (Colab-ready). Start here. |
-| `scripts/01–05` + `run_all.py` | The runnable reference pipeline: prepare → baseline → train → evaluate → PDF. |
-| `data/raw/content_refresh_anonymized.csv` | The anonymized starter dataset (~30k pages). |
-| `outputs/` | Example outputs so you can see the **target shape** (`model_report.md`, `refresh_queue_sample.csv`, `charts/`). |
-| `work/` | **Your space.** Lane experiments and your capstone live here — see `work/README.md`. |
-| `docs/` | The core docs + the data dictionary (see below). |
+The question guiding this project was:
 
-### Read these (in `docs/`)
+> **Which content pages should a strategist review first when the backlog is too large to inspect manually?**
 
-1. **`ml-core-foundation-framework.md`** — the first-principles map of ML as a whole system. The backbone of the live sessions.
-2. **`ml-intern-dataset-and-lane-guide.md`** — how to use the data safely, the capstone workflow, and the analysis "lanes" you can pick from.
-3. **`intern-free-tooling-guide.md`** — the zero-budget tool stack (Python, Colab, free AI assistants). You never need to pay for anything.
-4. **`data-dictionary.md`** — all 44 columns: meaning, scale, and gotchas. Keep it open while you work.
+A rule-based approach can identify isolated signals such as low CTR or weak rankings. However, content performance is often influenced by combinations of signals.
+
+For example, a page may have:
+
+* High impressions but weak CTR
+* Low impressions but strong engagement
+* Aging content with stable rankings
+
+Clustering makes it possible to group pages according to these combined behavioral patterns and turn the results into a more structured review process.
 
 ---
 
-## The pipeline (what `run_all.py` does)
+## Who Is This For?
+
+This project is intended for:
+
+* Content strategists
+* SEO and search-intelligence teams
+* Website owners managing large content inventories
+* Analysts who need to prioritize manual content review
+
+The output is intended to **support human decision-making rather than replace it**.
+
+---
+
+# Results at a Glance
+
+| Result                            |      Value |
+| --------------------------------- | ---------: |
+| Content pages analyzed            | **30,000** |
+| Features used for clustering      |      **5** |
+| Selected number of clusters       |      **7** |
+| Rule-based baseline silhouette    | **0.0013** |
+| Initial KMeans silhouette         | **0.3763** |
+| Client-held-out KMeans silhouette | **0.3046** |
+| Final action categories           |      **4** |
+
+The initial KMeans evaluation produced a silhouette score of **0.3763**.
+
+During validation, an evaluation-leakage issue was identified because the cluster centroids were fitted and evaluated on the same data.
+
+To address this, the evaluation was redesigned using a **client-held-out validation approach**, where entire clients were excluded during model fitting and used for evaluation.
+
+The resulting held-out silhouette score was **0.3046**.
+
+Although this score is lower than the original result, it provides a more honest estimate of how well the clustering structure generalizes to unseen clients.
+
+---
+
+# Data
+
+The project uses an anonymized FlyRank internship dataset containing **30,000 content pages**.
+
+The analysis uses a trailing **90-day aggregation window**.
+
+## Features Used
+
+The five features used for clustering are:
+
+* Impressions
+* Click-through rate (CTR)
+* Average ranking position
+* Engagement rate
+* Content age
+
+All features were standardized before applying KMeans clustering.
+
+## Deliberately Excluded
+
+The following fields were excluded to reduce leakage and avoid using internal priority information:
+
+* `trend_direction`
+* `trend_pct`
+* `content_id`
+* `client_id`
+* FlyRank health scores
+* FlyRank priority scores
+* Product action flags
+
+No client names, domains, URLs, page titles, or search queries were used in the analysis.
+
+---
+
+# Project Workflow
 
 ```text
-01_prepare_features.py   clean + build the feature vector, define the label
-02_baseline_score.py     a transparent hand-rule "fix this first" score
-03_train_model.py        logistic regression, decision tree, random forest (client-holdout split)
-04_evaluate_and_export.py  ranked queue + charts + Markdown report
-05_build_pdf_report.py   a shareable PDF summary
+Anonymized Content Data
+          │
+          ▼
+Data Cleaning & Feature Selection
+          │
+          ▼
+Feature Standardization
+          │
+          ▼
+Rule-Based Baseline
+          │
+          ▼
+KMeans Clustering
+          │
+          ▼
+Cluster Evaluation & Validation
+          │
+          ▼
+Behavioral Archetype Interpretation
+          │
+          ▼
+Human-Review Action Mapping
+          │
+          ▼
+Ranked Action Queue
 ```
 
-On the bundled sample, the learned model clearly beats the hand-written rule at picking the right
-pages to review first (**Precision@50 ≈ 0.24 → 0.74**; the model number can land 0.68–0.74
-depending on library versions — the ~3x lift is the point). The notebooks compute these numbers
-live, so they always reflect the current data and environment.
+---
 
-**Teaching point:** the model is the capstone, but the *workflow* is the lesson —
-`problem framing → data cleaning → baseline → first model → evaluation → explainable recommendation`.
+# Architecture and Design
+
+The workflow follows a simple decision-support pipeline:
+
+1. **Prepare the data** by selecting relevant observable performance signals.
+2. **Create a transparent baseline** to establish a simple comparison point.
+3. **Standardize the selected features** so that no individual metric dominates clustering because of scale.
+4. **Test multiple values of K** from 2 through 7.
+5. **Select K = 7** for the final clustering approach.
+6. **Validate the clustering structure** using a client-held-out evaluation approach.
+7. **Interpret the clusters** as behavioral archetypes.
+8. **Translate archetypes into recommended actions** for human review.
+9. **Produce a ranked action queue** to help reviewers decide where to start.
 
 ---
 
-## Data safety (read `DATA_USE.md`)
+# Why KMeans?
 
-- Only the small **anonymized** CSV ships here — no client names, domains, URLs, titles, or keywords.
-- **Never** add raw private client data to this repo or your fork. Need more data? Request an approved
-  release from your mentor — never export it yourself.
-- Don't paste client data into third-party AI tools.
-- Frame every result as **observed / measured / directional / decision-support** — never
-  "I predicted Google's algorithm."
+KMeans was selected because it provides a relatively understandable way to group pages with similar observed behavior.
 
-The `.gitignore` blocks datasets by default, and CI fails any commit that includes a dataset.
+The model uses multiple signals simultaneously rather than applying one fixed rule at a time.
+
+The goal is not to discover a universal or permanent taxonomy of content. Instead, the clusters provide a structured way to explore behavioral patterns within the available dataset.
 
 ---
 
-## Assignments & schedule
+# Setup
 
-Weekly assignments, live events, and the capstone live on **your portal board** (your
-enrollment email has your access link). This repo is the shared technical foundation they all
-build on — and the `skills/` folder here is the instruction library for your AI assistant
-(start at [skills/README.md](skills/README.md)).
+## Option 1 — Run the Capstone Notebook
 
-**First time with GitHub?** You need exactly four things (full walkthrough: [SETUP.md](SETUP.md)):
-1. A free account at github.com.
-2. Your own copy of this repo: **Use this template → Create a new repository** → public.
-   (One click — brings the notebooks, `work/`, and the CI leak-guard with it.)
-3. In Colab: *File → Save a copy in GitHub* — opened from your copy's badges, the dialog is
-   already pre-filled with your repo and path, so it's just OK (Colab handles auth).
-4. That's your submission repo — share its **github.com/you/your-repo** URL with Assignment 1
-   (never a colab.research.google.com or drive.google.com link).
+The main capstone analysis is located at:
+
+```text
+work/notebooks/capstone.ipynb
+```
+
+Open the notebook directly:
+
+📓 **[Open Capstone Notebook](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
+
+The notebook contains the analysis workflow, clustering approach, validation, and action-playbook generation.
+
+You can run it using Google Colab or a local Jupyter environment.
+
+## Option 2 — Run Locally
+
+Clone the repository:
+
+```bash
+git clone https://github.com/yumna-09/FlyRank-ML-Internship.git
+```
+
+Move into the project directory:
+
+```bash
+cd FlyRank-ML-Internship
+```
+
+Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
-*Track leads: Mirza Ašćerić (ML) · Hole (data engineering). Code under MIT (see `LICENSE`); data under `DATA_USE.md`.*
+# Usage
+
+The intended workflow is:
+
+1. Open the capstone notebook.
+2. Load the approved anonymized dataset.
+3. Select the five clustering features.
+4. Standardize the features.
+5. Run KMeans across the candidate values of K.
+6. Evaluate the resulting clusters.
+7. Validate the selected approach using the client-held-out methodology.
+8. Review the resulting behavioral archetypes.
+9. Generate the recommended human-review actions.
+10. Inspect the ranked action queue.
+
+The output should be interpreted as a **prioritization aid**.
+
+A human reviewer should inspect the page and its current context before taking actions such as refreshing, boosting, pruning, or monitoring content.
+
+---
+
+# Evaluation and Validation
+
+## Rule-Based Baseline
+
+Before fitting KMeans, a transparent rule-based baseline was created using observable search-performance signals.
+
+**Silhouette score: `0.0013`**
+
+## Initial KMeans Evaluation
+
+The first KMeans evaluation produced:
+
+**Silhouette score: `0.3763`**
+
+However, this result was not used as the final validation result because the clustering centroids were fitted and evaluated on the same data.
+
+This created an evaluation-leakage issue.
+
+## V2 — Client-Held-Out Validation
+
+The validation design was revised so that entire clients were held out during model fitting.
+
+The model was fitted without those clients and then evaluated on the held-out data.
+
+The resulting silhouette score was:
+
+**`0.3046`**
+
+| Method                                  | Silhouette Score |
+| --------------------------------------- | ---------------: |
+| Rule-Based Baseline                     |           0.0013 |
+| KMeans — Fit and Evaluated on All Data  |           0.3763 |
+| **KMeans — Client-Held-Out Validation** |       **0.3046** |
+
+## What Changed in V2?
+
+The most important change was **not increasing the score**. It was improving the validity of the evaluation.
+
+The original evaluation looked stronger, but it measured clustering structure on data that had already influenced the fitted centroids.
+
+The V2 approach produced a lower score, but it provides a more credible estimate of how the approach behaves on unseen clients.
+
+> **An honest evaluation was prioritized over a better-looking metric.**
+
+---
+
+# Action Playbook
+
+The behavioral archetypes are translated into four broad action categories.
+
+## 🔄 Refresh
+
+Pages that may benefit from content review or improvement.
+
+## 🚀 Boost
+
+Pages that show useful potential and may benefit from additional optimization or visibility efforts.
+
+## ✂️ Prune
+
+Pages that should be flagged for careful human review to determine whether they continue to provide sufficient value.
+
+## 👀 Monitor
+
+Pages that do not currently require immediate action but should remain under observation.
+
+These actions are **recommendations for human review, not automated instructions**.
+
+📥 **[Download the Ranked Action Queue](https://github.com/yumna-09/FlyRank-ML-Internship/releases)**
+
+---
+
+# Project Structure
+
+```text
+FlyRank-ML-Internship/
+│
+├── work/
+│   ├── notebooks/
+│   │   └── capstone.ipynb
+│   │
+│   └── CAPSTONE_REPORT.md
+│
+├── docs/
+│   └── index.html
+│
+├── outputs/
+│   └── project outputs and generated artifacts
+│
+├── data/
+│   └── approved anonymized data resources
+│
+├── requirements.txt
+│
+└── README.md
+```
+
+---
+
+# Live Project
+
+The capstone is presented as a deployed research paper through GitHub Pages.
+
+🌐 **[View the Live Research Paper](https://yumna-09.github.io/FlyRank-ML-Internship/)**
+
+The live report presents:
+
+* The research question
+* The clustering approach
+* Evaluation results
+* Behavioral archetypes
+* Action recommendations
+* Project limitations
+
+For the complete technical analysis:
+
+📄 **[Read the Full Capstone Report](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md)**
+
+📓 **[Explore the Capstone Notebook](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
+
+---
+
+# Limitations
+
+This project has several important limitations.
+
+## 1. Results Depend on the Available Data
+
+The discovered archetypes depend on the dataset, selected features, and observation window used in this analysis.
+
+Different datasets or additional features could produce different cluster structures.
+
+## 2. Clusters Are Not Ground-Truth Labels
+
+The seven clusters are analytical groupings based on observed behavior.
+
+They should not be treated as universal or permanent categories of content.
+
+## 3. Recommendations Require Human Review
+
+An action such as **Refresh** or **Prune** should not be automatically executed.
+
+A human reviewer should inspect the actual page, business context, content quality, and other relevant information before making a decision.
+
+## 4. Silhouette Score Does Not Measure Business Impact
+
+The evaluation measures clustering structure.
+
+It does not prove that following the recommended actions will cause traffic, rankings, or business outcomes to improve.
+
+## 5. This Is Not a Model of Google's Algorithm
+
+The project does not predict Google's ranking algorithm or make causal claims about why a page performs in a particular way.
+
+All findings should be interpreted as:
+
+> **Observed · Measured · Directional · Decision-Support**
+
+---
+
+# Key Design Decision
+
+A major design decision was to convert clustering results into a **ranked human-review action queue** rather than stopping at cluster labels.
+
+A clustering result alone can be difficult for a non-technical stakeholder to act on.
+
+Mapping behavioral archetypes into recommended review actions makes the analysis more operational while keeping a human in the decision loop.
+
+---
+
+# AI Transparency
+
+AI tools were used during this project to assist with:
+
+* Brainstorming
+* Coding support
+* Debugging
+* Documentation
+* Iteration
+
+I reviewed the generated suggestions, checked the analysis workflow and outputs, identified and corrected the evaluation-leakage issue, and made the final decisions about the project's methodology, validation approach, interpretation, and presentation.
+
+AI assisted the development process, but the final project required **human review and validation of the results**.
+
+---
+
+# Repository
+
+This repository contains the work completed throughout the **FlyRank ML Internship**, including weekly assignment notebooks, supporting documentation, and the final capstone.
+
+The capstone represents the final application of that work:
+
+```text
+Problem Framing
+        ↓
+Data Understanding
+        ↓
+Leakage Checking
+        ↓
+Signal Auditing
+        ↓
+Baseline Design
+        ↓
+Modeling
+        ↓
+Validation
+        ↓
+Action Playbook
+        ↓
+Capstone
+```
+
+---
+
+# Acknowledgments
+
+This project was completed as the capstone for the **FlyRank ML Internship — Applied Search Intelligence track**.
+
+The project builds on the internship's technical foundation and uses the approved anonymized data and learning framework provided for the program.
+
+Thank you to **FlyRank** and the internship team for the learning environment, technical resources, and guidance that supported this project.
+
+The analysis, evaluation, interpretation, and final capstone presentation represent my work completed during the internship.
