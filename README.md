@@ -2,7 +2,7 @@
 
 - **Author:** Yumna Kashif
 - **Program:** FlyRank ML Internship
-- **Track:** Applied Search Intelligence
+- **Track:** Machine Learning Engineering
 - **Capstone Lane:** Structured Content Archetype Clustering
 
 > **30,000 content pages → 7 behavioral archetypes → ranked human-review actions**
