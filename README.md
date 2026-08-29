@@ -13,6 +13,7 @@
 * 💻 **[GitHub Repository](https://github.com/yumna-09/FlyRank-ML-Internship)**
 * 📓 **[Capstone Notebook](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
 * 📄 **[Full Capstone Report](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/CAPSTONE_REPORT.md)**
+* 🎥 **[Watch Capstone Demo](https://youtu.be/zC9mphblVJk)**
 * 📥 **[Download Ranked Action Queue](https://github.com/yumna-09/FlyRank-ML-Internship/releases)**
 
 ---
