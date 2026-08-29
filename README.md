@@ -16,6 +16,11 @@
 * 🎥 **[Watch Capstone Demo](https://youtu.be/zC9mphblVJk)**
 * 📥 **[Download Ranked Action Queue](https://github.com/yumna-09/FlyRank-ML-Internship/releases)**
 
+## Track Deliverables
+
+📚 **[View Assignment Index](work/README.md)**  
+📝 **[Read Internship Retrospective](RETROSPECTIVE.md)**
+
 ---
 
 ## Overview
