@@ -18,8 +18,8 @@
 
 ## Track Deliverables
 
-📚 **[View Assignment Index](work/README.md)**  
-📝 **[Read Internship Retrospective](RETROSPECTIVE.md)**
+* 📚 **[View Assignment Index](work/README.md)**  
+* 📝 **[Read Internship Retrospective](RETROSPECTIVE.md)**
 
 ---
 
