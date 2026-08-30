@@ -1,4 +1,4 @@
-# Content Archetype Clustering — FlyRank ML Capstone
+# Structured Content Archetype Clustering — FlyRank ML Capstone
 
 - **Author:** Yumna Kashif
 - **Program:** FlyRank ML Internship
