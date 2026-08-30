@@ -10,7 +10,7 @@
 ## 🔗 Project Links
 
 * 🌐 **[Live Research Paper](https://yumna-09.github.io/FlyRank-ML-Internship/)**
-* 💻 **[GitHub Repository](https://github.com/yumna-09/FlyRank-ML-Internship)**
+* 💻 **[Capstone GitHub Repository](https://github.com/yumna-09/FlyRank-ML-Internship)**
 * ✨ **[Live Internship Portfolio](https://yumnakashif-ml-internship-portfolio.netlify.app/)**
 * 🗂️ **[Portfolio GitHub Repository](https://github.com/yumna-09/ML-Internship-Portfolio)**
 * 📓 **[Capstone Notebook](https://github.com/yumna-09/FlyRank-ML-Internship/blob/main/work/notebooks/capstone.ipynb)**
